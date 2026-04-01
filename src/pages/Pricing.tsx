@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 
 const features = [
   { name: "Cadastrar produtos", free: true, premium: true },
-  { name: "Limite de produtos", free: "5 produtos", premium: "Ilimitado" },
+  { name: "Limite de produtos", free: "3 produtos", premium: "Ilimitado" },
   { name: "Fotos dos produtos", free: true, premium: true },
   { name: "Perfil público", free: true, premium: true },
   { name: "Avaliações e reputação", free: true, premium: true },
@@ -26,7 +26,7 @@ const Pricing = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        navigate("/auth");
+        navigate("/");
         return;
       }
       const { data, error } = await supabase.functions.invoke("create-checkout", {
@@ -99,7 +99,7 @@ const Pricing = () => {
               <CardTitle className="text-2xl text-foreground">Premium</CardTitle>
               <CardDescription>Para vendedores profissionais</CardDescription>
               <div className="mt-4">
-                <span className="text-4xl font-bold text-foreground">R$ 29,90</span>
+                <span className="text-4xl font-bold text-foreground">R$ 11,90</span>
                 <span className="text-muted-foreground">/mês</span>
               </div>
             </CardHeader>

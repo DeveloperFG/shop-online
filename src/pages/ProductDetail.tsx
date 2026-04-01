@@ -28,7 +28,7 @@ type Profile = Tables<"profiles">;
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
   const [seller, setSeller] = useState<Profile | null>(null);
@@ -36,8 +36,9 @@ const ProductDetail = () => {
   const [chatOpen, setChatOpen] = useState(false);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
-      navigate("/auth");
+      navigate("/");
       return;
     }
     if (!id) return;
@@ -65,8 +66,18 @@ const ProductDetail = () => {
       setLoading(false);
     };
     fetch();
-  }, [id, user]);
+  }, [id, user, authLoading, navigate]);
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="flex items-center justify-center pt-32">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
   if (!user) return null;
 
   if (loading) {

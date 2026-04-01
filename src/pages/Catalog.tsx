@@ -17,7 +17,7 @@ type Profile = Tables<"profiles">;
 type ProductWithSeller = Product & { seller?: Profile; category?: string | null };
 
 const Catalog = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [products, setProducts] = useState<ProductWithSeller[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,8 +26,9 @@ const Catalog = () => {
   const [sellerFilter, setSellerFilter] = useState("");
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
-      navigate("/auth");
+      navigate("/");
       return;
     }
 
@@ -58,7 +59,7 @@ const Catalog = () => {
       setLoading(false);
     };
     fetchProducts();
-  }, [navigate, user]);
+  }, [navigate, user, authLoading]);
 
   const sellerNames = useMemo(() => {
     const names = new Set<string>();
@@ -94,6 +95,16 @@ const Catalog = () => {
 
   const hasActiveFilters = categoryFilter || sellerFilter;
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="flex justify-center pt-32">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
   if (!user) return null;
 
   return (

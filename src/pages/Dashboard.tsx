@@ -21,10 +21,10 @@ import type { Tables } from "@/integrations/supabase/types";
 
 type Product = Tables<"products">;
 
-const FREE_PRODUCT_LIMIT = 5;
+const FREE_PRODUCT_LIMIT = 3;
 
 const Dashboard = () => {
-  const { user, subscription, checkingSubscription, refreshSubscription } = useAuth();
+  const { user, loading: authLoading, subscription, checkingSubscription, refreshSubscription } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
@@ -46,8 +46,9 @@ const Dashboard = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
-      navigate("/auth");
+      navigate("/");
       return;
     }
     fetchProducts();
@@ -58,7 +59,7 @@ const Dashboard = () => {
     } else if (checkout === "cancel") {
       toast.info("Checkout cancelado.");
     }
-  }, [user]);
+  }, [user, authLoading, navigate, searchParams]);
 
   const fetchProducts = async () => {
     if (!user) return;
@@ -192,6 +193,16 @@ const Dashboard = () => {
     }
   };
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="flex justify-center pt-32">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
   if (!user) return null;
 
   const publishedCount = products.filter((p) => p.status === "active").length;

@@ -20,5 +20,9 @@ dist-ssr
 *.suo
 *.ntvs*
 *.njsproj
-*.sln
+*.slns
 *.sw?
+
+# ENV FILES
+.env
+.env.*
