@@ -121,17 +121,17 @@ const ProductDetail = () => {
 
         {/* Product image */}
         <div className="overflow-hidden rounded-xl bg-muted">
-          {product.image_url ? (
-            <img
-              src={product.image_url}
-              alt={product.name}
-              className="aspect-square w-full object-cover sm:aspect-[4/3]"
-            />
-          ) : (
-            <div className="flex aspect-square items-center justify-center sm:aspect-[4/3]">
+          <div className="flex aspect-square items-center justify-center sm:aspect-[4/3]">
+            {product.image_url ? (
+              <img
+                src={product.image_url}
+                alt={product.name}
+                className="block max-h-full max-w-full object-contain"
+              />
+            ) : (
               <Package className="h-16 w-16 text-muted-foreground/40" />
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Product info */}

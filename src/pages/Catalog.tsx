@@ -141,7 +141,7 @@ const Catalog = () => {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={sellerFilter} onValueChange={setSellerFilter}>
+            {/* <Select value={sellerFilter} onValueChange={setSellerFilter}>
               <SelectTrigger className="w-[180px] h-9 text-sm">
                 <SelectValue placeholder="Vendedor" />
               </SelectTrigger>
@@ -150,7 +150,7 @@ const Catalog = () => {
                   <SelectItem key={name} value={name}>{name}</SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </Select> */}
             {hasActiveFilters && (
               <Button
                 variant="ghost"

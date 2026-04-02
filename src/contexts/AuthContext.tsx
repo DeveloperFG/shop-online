@@ -22,8 +22,8 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   subscription: { subscribed: false, product_id: null, subscription_end: null },
   checkingSubscription: false,
-  refreshSubscription: async () => {},
-  signOut: async () => {},
+  refreshSubscription: async () => { },
+  signOut: async () => { },
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -45,7 +45,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setCheckingSubscription(true);
       const { data, error } = await supabase.functions.invoke("check-subscription", {
         headers: { Authorization: `Bearer ${session.access_token}` },
+
       });
+
+      console.log("data :", data)
+      console.log("error :", error)
+
+      console.log("Subscription raw", subscription);
+      console.log("current_period_end", subscription.current_period_end);
+
+      if (error) {
+        const errText = await error.context.text(); // 👈 ESSENCIAL
+        console.error("Function error body:", errText);
+      }
+
       if (!error && data) {
         setSubscription({
           subscribed: data.subscribed ?? false,
@@ -66,6 +79,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       (_event, session) => {
         setUser(session?.user ?? null);
         setLoading(false);
+        console.log("session :", session)
+        console.log("event :", subscription)
+
         if (session?.user) {
           // Defer to avoid Supabase deadlock
           setTimeout(() => checkSubscription(), 0);

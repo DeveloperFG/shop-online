@@ -4,11 +4,12 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const logStep = (step: string, details?: any) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : "";
   console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
 };
 
@@ -33,24 +34,48 @@ serve(async (req) => {
     if (!authHeader) throw new Error("No authorization header provided");
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
-    const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
-    logStep("User authenticated", { userId: user.id, email: user.email });
+    const { data: userData, error: userError } =
+      await supabaseClient.auth.getUser(token);
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    if (userError)
+      throw new Error(`Authentication error: ${userError.message}`);
+
+    const user = userData.user;
+
+    if (!user?.email)
+      throw new Error("User not authenticated or email not available");
+
+    logStep("User authenticated", {
+      userId: user.id,
+      email: user.email,
+    });
+
+    // 🔥 Stripe (removi versão fixa pra evitar incompatibilidade)
+    const stripe = new Stripe(stripeKey);
+
+    const customers = await stripe.customers.list({
+      email: user.email,
+      limit: 1,
+    });
 
     if (customers.data.length === 0) {
       logStep("No Stripe customer found");
-      return new Response(JSON.stringify({ subscribed: false }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
+
+      return new Response(
+        JSON.stringify({
+          subscribed: false,
+          product_id: null,
+          subscription_end: null,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
     }
 
     const customerId = customers.data[0].id;
+
     logStep("Found Stripe customer", { customerId });
 
     const subscriptions = await stripe.subscriptions.list({
@@ -60,56 +85,110 @@ serve(async (req) => {
     });
 
     const hasActiveSub = subscriptions.data.length > 0;
-    let productId = null;
-    let subscriptionEnd = null;
 
-    if (hasActiveSub) {
+    logStep("hasActiveSub", { hasActiveSub });
+
+    let productId: string | null = null;
+    let subscriptionEnd: string | null = null;
+
+    if (hasActiveSub && subscriptions.data[0]) {
       const subscription = subscriptions.data[0];
-      subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-      productId = subscription.items.data[0].price.product;
-      logStep("Active subscription found", { subscriptionEnd, productId });
 
-      // Sync to subscriptions table
-      const { data: existing } = await supabaseClient
+      logStep("Stripe subscription", subscription);
+
+      // ✅ PROTEÇÃO DO current_period_end
+      const periodEnd = subscription.current_period_end;
+
+      if (periodEnd && typeof periodEnd === "number") {
+        subscriptionEnd = new Date(periodEnd * 1000).toISOString();
+      } else {
+        logStep("Invalid period_end", subscription);
+        subscriptionEnd = null;
+      }
+
+      // ✅ PROTEÇÃO DO product
+      const item = subscription.items?.data?.[0];
+      productId = item?.price?.product ?? null;
+
+      logStep("Active subscription processed", {
+        subscriptionEnd,
+        productId,
+      });
+
+      // 🔄 Sync com banco
+      const { data: existing, error: existingError } = await supabaseClient
         .from("subscriptions")
         .select("id")
         .eq("user_id", user.id)
         .maybeSingle();
 
+      if (existingError) {
+        throw new Error(`Fetch existing error: ${existingError.message}`);
+      }
+
       const subData = {
         user_id: user.id,
         stripe_customer_id: customerId,
-        stripe_product_id: productId as string,
+        stripe_product_id: productId,
         is_active: true,
         subscription_end: subscriptionEnd,
         updated_at: new Date().toISOString(),
       };
 
       if (existing) {
-        await supabaseClient.from("subscriptions").update(subData).eq("id", existing.id);
+        const { error: updateError } = await supabaseClient
+          .from("subscriptions")
+          .update(subData)
+          .eq("id", existing.id);
+
+        if (updateError) {
+          throw new Error(`Update error: ${updateError.message}`);
+        }
       } else {
-        await supabaseClient.from("subscriptions").insert(subData);
+        const { error: insertError } = await supabaseClient
+          .from("subscriptions")
+          .insert(subData);
+
+        if (insertError) {
+          throw new Error(`Insert error: ${insertError.message}`);
+        }
       }
     } else {
       logStep("No active subscription");
-      // Mark inactive
-      await supabaseClient
+
+      // 🔄 Marca como inativo
+      const { error: updateError } = await supabaseClient
         .from("subscriptions")
-        .update({ is_active: false, updated_at: new Date().toISOString() })
+        .update({
+          is_active: false,
+          updated_at: new Date().toISOString(),
+        })
         .eq("user_id", user.id);
+
+      if (updateError) {
+        throw new Error(`Update inactive error: ${updateError.message}`);
+      }
     }
 
-    return new Response(JSON.stringify({
-      subscribed: hasActiveSub,
-      product_id: productId,
-      subscription_end: subscriptionEnd,
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+    return new Response(
+      JSON.stringify({
+        subscribed: hasActiveSub,
+        product_id: productId,
+        subscription_end: subscriptionEnd,
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      }
+    );
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("FULL ERROR:", error);
+
+    const errorMessage =
+      error instanceof Error ? error.message : String(error);
+
     logStep("ERROR", { message: errorMessage });
+
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

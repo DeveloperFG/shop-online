@@ -35,6 +35,10 @@ const Dashboard = () => {
   const [portalLoading, setPortalLoading] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
+  console.log("SUBSCRIPTION:", subscription)
+  console.log("USER:", user)
+  console.log("checkingSubscription :", checkingSubscription)
+
 
   // Form state
   const [name, setName] = useState("");
