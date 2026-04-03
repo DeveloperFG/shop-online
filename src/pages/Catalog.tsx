@@ -77,9 +77,7 @@ const Catalog = () => {
     return Array.from(cats).sort();
   }, [products]);
 
-  console.log('categorias existentes', availableCategories)
-  console.log("nomes de usuarios", sellerNames)
-  console.log("produtos", products)
+  console.log("import do .env", import.meta.env.VITE_SUPABASE_URL)
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
