@@ -14,19 +14,47 @@ const ResetPassword = () => {
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
 
+  // useEffect(() => {
+  //   const hash = window.location.hash;
+  //   if (hash && hash.includes("type=recovery")) {
+  //     setReady(true);
+  //   } else {
+  //     // Listen for auth state change from recovery link
+  //     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+  //       if (event === "PASSWORD_RECOVERY") {
+  //         setReady(true);
+  //       }
+  //     });
+  //     return () => subscription.unsubscribe();
+  //   }
+  // }, []);
+
   useEffect(() => {
-    const hash = window.location.hash;
-    if (hash && hash.includes("type=recovery")) {
-      setReady(true);
-    } else {
-      // Listen for auth state change from recovery link
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-        if (event === "PASSWORD_RECOVERY") {
-          setReady(true);
+    const handleRecovery = async () => {
+      const hash = window.location.hash;
+
+      if (hash) {
+        const params = new URLSearchParams(hash.replace("#", "?"));
+
+        const access_token = params.get("access_token");
+        const refresh_token = params.get("refresh_token");
+
+        if (access_token && refresh_token) {
+          const { error } = await supabase.auth.setSession({
+            access_token,
+            refresh_token,
+          });
+
+          if (!error) {
+            setReady(true);
+          } else {
+            console.error("Erro ao restaurar sessão:", error);
+          }
         }
-      });
-      return () => subscription.unsubscribe();
-    }
+      }
+    };
+
+    handleRecovery();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
