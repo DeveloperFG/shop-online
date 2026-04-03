@@ -5,9 +5,10 @@ import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, LogOut, Sun, Moon, MessageCircle } from "lucide-react";
+import { Menu, Sun, Moon, MessageCircle, LogOut } from "lucide-react";
 import { useState } from "react";
 import ConversationsList from "./ConversationsList";
+import ProfileMenu from "./ProfileMenu";
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
@@ -26,7 +27,7 @@ const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <Link to="/" className="text-xl font-bold tracking-tight text-foreground">
-          Shop<span className="text-primary">-QXB</span>
+          Meu<span className="text-primary">App</span>
         </Link>
 
         {/* Desktop */}
@@ -50,9 +51,7 @@ const Navbar = () => {
             </Button>
           )}
           {user ? (
-            <Button variant="ghost" size="sm" onClick={signOut}>
-              <LogOut className="mr-1 h-4 w-4" /> Sair
-            </Button>
+            <ProfileMenu />
           ) : (
             <Button asChild size="sm">
               <Link to="/auth">Entrar</Link>
