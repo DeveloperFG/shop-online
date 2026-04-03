@@ -28,13 +28,31 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
+    const eventId = event.id;
+
+    // verifica se já foi processado
+    const { data: existingEvent } = await supabase
+      .from("stripe_events")
+      .select("id")
+      .eq("id", eventId)
+      .maybeSingle();
+
+    if (existingEvent) {
+      console.log("Event already processed:", eventId);
+      return new Response(JSON.stringify({ received: true }), { status: 200 });
+    }
+
+    // salva evento
+    await supabase.from("stripe_events").insert({ id: eventId });
+  
+
   try {
     switch (event.type) {
 
       // ✅ PAGAMENTO OK
       case "invoice.payment_succeeded": {
         const invoice = event.data.object;
-        const customerId = invoice.customer;
+        const subscriptionId = invoice.subscription;
 
         const subscriptionEnd = new Date(
           invoice.lines.data[0].period.end * 1000
@@ -47,7 +65,7 @@ serve(async (req) => {
             subscription_end: subscriptionEnd,
             updated_at: new Date().toISOString(),
           })
-          .eq("stripe_customer_id", customerId);
+          .eq("stripe_subscription_id", subscriptionId)
 
         break;
       }
@@ -55,7 +73,7 @@ serve(async (req) => {
       // ❌ PAGAMENTO FALHOU
       case "invoice.payment_failed": {
         const invoice = event.data.object;
-        const customerId = invoice.customer;
+       const subscriptionId = invoice.subscription;
 
         await supabase
           .from("subscriptions")
@@ -63,7 +81,7 @@ serve(async (req) => {
             is_active: false,
             updated_at: new Date().toISOString(),
           })
-          .eq("stripe_customer_id", customerId);
+          .eq("stripe_subscription_id", subscriptionId)
 
         break;
       }
@@ -71,7 +89,7 @@ serve(async (req) => {
       // 🚫 CANCELAMENTO
       case "customer.subscription.deleted": {
         const subscription = event.data.object;
-        const customerId = subscription.customer;
+        const subscriptionId = subscription.id;
 
         await supabase
           .from("subscriptions")
@@ -80,7 +98,7 @@ serve(async (req) => {
             subscription_end: null,
             updated_at: new Date().toISOString(),
           })
-          .eq("stripe_customer_id", customerId);
+          .eq("stripe_subscription_id", subscriptionId)
 
         break;
       }
@@ -88,7 +106,7 @@ serve(async (req) => {
       // 🔄 ATUALIZAÇÃO
       case "customer.subscription.updated": {
         const subscription = event.data.object;
-        const customerId = subscription.customer;
+        const subscriptionId = subscription.id;
 
         const subscriptionEnd = subscription.current_period_end
           ? new Date(subscription.current_period_end * 1000).toISOString()
@@ -101,7 +119,7 @@ serve(async (req) => {
             subscription_end: subscriptionEnd,
             updated_at: new Date().toISOString(),
           })
-          .eq("stripe_customer_id", customerId);
+          .eq("stripe_subscription_id", subscriptionId)
 
         break;
       }

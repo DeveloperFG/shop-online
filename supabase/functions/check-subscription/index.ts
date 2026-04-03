@@ -94,6 +94,8 @@ serve(async (req) => {
     if (hasActiveSub && subscriptions.data[0]) {
       const subscription = subscriptions.data[0];
 
+      const stripeSubId = subscription.id;
+
       logStep("Stripe subscription", subscription);
 
       // ✅ PROTEÇÃO DO current_period_end
@@ -119,7 +121,7 @@ serve(async (req) => {
       const { data: existing, error: existingError } = await supabaseClient
         .from("subscriptions")
         .select("id")
-        .eq("user_id", user.id)
+        .eq("stripe_subscription_id", stripeSubId)
         .maybeSingle();
 
       if (existingError) {
@@ -128,6 +130,7 @@ serve(async (req) => {
 
       const subData = {
         user_id: user.id,
+        stripe_subscription_id: stripeSubId,
         stripe_customer_id: customerId,
         stripe_product_id: productId,
         is_active: true,
@@ -135,24 +138,15 @@ serve(async (req) => {
         updated_at: new Date().toISOString(),
       };
 
-      if (existing) {
-        const { error: updateError } = await supabaseClient
+      const { error: upsertError } = await supabaseClient
           .from("subscriptions")
-          .update(subData)
-          .eq("id", existing.id);
+          .upsert(subData, {
+            onConflict: "stripe_subscription_id",
+          });
 
-        if (updateError) {
-          throw new Error(`Update error: ${updateError.message}`);
+        if (upsertError) {
+          throw new Error(`Upsert error: ${upsertError.message}`);
         }
-      } else {
-        const { error: insertError } = await supabaseClient
-          .from("subscriptions")
-          .insert(subData);
-
-        if (insertError) {
-          throw new Error(`Insert error: ${insertError.message}`);
-        }
-      }
     } else {
       logStep("No active subscription");
 
