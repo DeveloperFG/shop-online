@@ -175,8 +175,17 @@ const ProductDetail = () => {
                   Vendedor
                 </h2>
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                    <User className="h-5 w-5" />
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-primary-foreground">
+                    {seller.avatar_url ? (
+                      <img
+                        src={seller.avatar_url}
+                        alt={seller.name ?? "Foto do vendedor"}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <User className="h-5 w-5" />
+                    )}
                   </div>
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <p className="font-semibold text-foreground">{seller.name}</p>

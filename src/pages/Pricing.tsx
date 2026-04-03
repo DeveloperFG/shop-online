@@ -1,9 +1,10 @@
-import { Check, X, Crown, Zap } from "lucide-react";
+import { Check, X, Crown, Zap, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const features = [
@@ -20,6 +21,16 @@ const features = [
 const Pricing = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { user, subscription, checkingSubscription, refreshSubscription } = useAuth();
+
+  const isPremiumActive = Boolean(user && subscription.subscribed);
+  const isFreeActive = Boolean(user && !subscription.subscribed);
+
+  useEffect(() => {
+    if (user) void refreshSubscription();
+    // refreshSubscription vem do contexto; id do usuário basta para revalidar ao trocar conta
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const handleCheckout = async () => {
     setLoading(true);
@@ -58,7 +69,18 @@ const Pricing = () => {
 
         <div className="grid md:grid-cols-2 gap-8">
           {/* Free Plan */}
-          <Card className="relative border-border">
+          <Card
+            className={`relative border-border transition-shadow ${
+              isFreeActive ? "ring-2 ring-primary shadow-md" : ""
+            }`}
+          >
+            {isFreeActive && (
+              <div className="absolute -top-3 right-4">
+                <Badge variant="default" className="shadow-sm">
+                  Plano ativo
+                </Badge>
+              </div>
+            )}
             <CardHeader className="pb-4">
               <CardTitle className="text-2xl text-foreground">Grátis</CardTitle>
               <CardDescription>Para quem está começando</CardDescription>
@@ -82,22 +104,49 @@ const Pricing = () => {
               ))}
             </CardContent>
             <CardFooter>
-              <Button variant="outline" className="w-full" disabled>
-                Plano atual
-              </Button>
+              {checkingSubscription && user ? (
+                <Button variant="outline" className="w-full" disabled>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Verificando plano…
+                </Button>
+              ) : isFreeActive ? (
+                <Button variant="outline" className="w-full" disabled>
+                  Plano atual
+                </Button>
+              ) : (
+                <Button variant="outline" className="w-full" disabled>
+                  {user ? "Grátis" : "Grátis ao criar conta"}
+                </Button>
+              )}
             </CardFooter>
           </Card>
 
           {/* Premium Plan */}
-          <Card className="relative border-primary shadow-lg ring-2 ring-primary/20">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-              <Badge className="bg-primary text-primary-foreground shadow-sm">
-                <Crown className="w-3 h-3 mr-1" /> Recomendado
-              </Badge>
+          <Card
+            className={`relative border-primary shadow-lg transition-shadow ${
+              isPremiumActive ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : "ring-2 ring-primary/20"
+            }`}
+          >
+            <div className="absolute -top-3 left-1/2 flex -translate-x-1/2 flex-wrap items-center justify-center gap-2">
+              {isPremiumActive ? (
+                <Badge className="bg-primary text-primary-foreground shadow-sm">
+                  Plano ativo
+                </Badge>
+              ) : (
+                <Badge className="bg-primary text-primary-foreground shadow-sm">
+                  <Crown className="w-3 h-3 mr-1" /> Recomendado
+                </Badge>
+              )}
             </div>
             <CardHeader className="pb-4">
               <CardTitle className="text-2xl text-foreground">Premium</CardTitle>
               <CardDescription>Para vendedores profissionais</CardDescription>
+              {isPremiumActive && subscription.subscription_end && (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Renova em{" "}
+                  {new Date(subscription.subscription_end).toLocaleDateString("pt-BR")}
+                </p>
+              )}
               <div className="mt-4">
                 <span className="text-4xl font-bold text-foreground">R$ 11,90</span>
                 <span className="text-muted-foreground">/mês</span>
@@ -114,9 +163,24 @@ const Pricing = () => {
               ))}
             </CardContent>
             <CardFooter>
-              <Button className="w-full" onClick={handleCheckout} disabled={loading}>
-                {loading ? "Redirecionando..." : "Assinar Premium"}
-              </Button>
+              {checkingSubscription && user ? (
+                <Button className="w-full" disabled>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Verificando plano…
+                </Button>
+              ) : isPremiumActive ? (
+                <Button className="w-full" disabled variant="secondary">
+                  Plano ativo
+                </Button>
+              ) : (
+                <Button
+                  className="w-full"
+                  onClick={handleCheckout}
+                  disabled={loading}
+                >
+                  {loading ? "Redirecionando..." : "Assinar Premium"}
+                </Button>
+              )}
             </CardFooter>
           </Card>
         </div>

@@ -5,7 +5,7 @@ import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Sun, Moon, MessageCircle, LogOut } from "lucide-react";
+import { Menu, Sun, Moon, MessageCircle, LogOut, User } from "lucide-react";
 import { useState } from "react";
 import ConversationsList from "./ConversationsList";
 import ProfileMenu from "./ProfileMenu";
@@ -19,7 +19,7 @@ const Navbar = () => {
 
   const links = [
     { to: "/catalog", label: "Catálogo" },
-    { to: "/pricing", label: "Preços" },
+    { to: "/pricing", label: "Planos" },
     ...(user ? [{ to: "/dashboard", label: "Dashboard" }] : []),
   ];
 
@@ -27,7 +27,7 @@ const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <Link to="/" className="text-xl font-bold tracking-tight text-foreground">
-          Meu<span className="text-primary">App</span>
+          SHOP<span className="text-primary">-QXB</span>
         </Link>
 
         {/* Desktop */}
@@ -71,6 +71,16 @@ const Navbar = () => {
                   {l.label}
                 </Link>
               ))}
+              {user && (
+                <Link
+                  to="/profile"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2 text-lg font-medium text-foreground"
+                >
+                  {/* <User className="h-5 w-5 shrink-0" /> */}
+                  Meu Perfil
+                </Link>
+              )}
               <Button variant="outline" size="sm" onClick={toggleTheme} className="justify-start">
                 {theme === "dark" ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
                 {theme === "dark" ? "Modo claro" : "Modo escuro"}
