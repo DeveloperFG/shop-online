@@ -292,13 +292,19 @@ const Dashboard = () => {
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {products.map((p) => (
-                <Card key={p.id} className={`overflow-hidden ${p.status !== "active" ? "opacity-70" : ""}`}>
-                  <div className="relative">
-                    <div className="aspect-video bg-muted flex items-center justify-center overflow-hidden">
+                <Card key={p.id} className={`min-w-0 overflow-hidden ${p.status !== "active" ? "opacity-70" : ""}`}>
+                  <div className="relative min-w-0">
+                    <div className="relative aspect-video w-full min-h-0 overflow-hidden bg-muted">
                       {p.image_url ? (
-                        <img src={p.image_url} alt={p.name} className="max-h-full max-w-full object-contain p-2" />
+                        <img
+                          src={p.image_url}
+                          alt={p.name}
+                          className="absolute inset-0 box-border h-full w-full object-contain object-center p-2"
+                        />
                       ) : (
-                        <Package className="h-10 w-10 text-muted-foreground/30" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Package className="h-10 w-10 text-muted-foreground/30" />
+                        </div>
                       )}
                     </div>
                     <Badge
