@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,8 +12,19 @@ import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import { Loader2, Camera, Save } from "lucide-react";
 
+type ProfileRow = {
+    user_id: string;
+    name: string | null;
+    email: string | null;
+    phone: string | null;
+    location: string | null;
+    avatar_url?: string | null;
+};
+
+type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
+
 const Profile = () => {
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -24,15 +36,7 @@ const Profile = () => {
     const [location, setLocation] = useState("");
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (!user) {
-            navigate("/auth");
-            return;
-        }
-        fetchProfile();
-    }, [user]);
-
-    const fetchProfile = async () => {
+    const fetchProfile = useCallback(async () => {
         if (!user) return;
         setLoading(true);
         const { data, error } = await supabase
@@ -42,14 +46,25 @@ const Profile = () => {
             .single();
 
         if (!error && data) {
-            setName(data.name);
-            setEmail(data.email);
-            setPhone(data.phone || "");
-            setLocation(data.location || "");
-            setAvatarUrl((data as any).avatar_url || null);
+            const profile = data as ProfileRow;
+            setName(profile.name ?? "");
+            setEmail(profile.email ?? "");
+            setPhone(profile.phone ?? "");
+            setLocation(profile.location ?? "");
+            setAvatarUrl(profile.avatar_url ?? null);
         }
         setLoading(false);
-    };
+    }, [user]);
+
+    useEffect(() => {
+        if (authLoading) return;
+
+        if (!user) {
+            navigate("/auth");
+            return;
+        }
+        fetchProfile();
+    }, [user, authLoading, navigate, fetchProfile]);
 
     const MAX_AVATAR_SIZE = 2 * 1024 * 1024; // 2MB
 
@@ -77,14 +92,15 @@ const Profile = () => {
 
             const { error: updateError } = await supabase
                 .from("profiles")
-                .update({ avatar_url: newUrl } as any)
+                .update<ProfileUpdate>({ avatar_url: newUrl })
                 .eq("user_id", user.id);
             if (updateError) throw updateError;
 
             setAvatarUrl(newUrl);
             toast.success("Foto de perfil atualizada!");
-        } catch (err: any) {
-            toast.error(err.message || "Erro ao enviar foto");
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "Erro ao enviar foto";
+            toast.error(message);
         } finally {
             setUploadingAvatar(false);
         }
@@ -104,12 +120,26 @@ const Profile = () => {
                 .eq("user_id", user.id);
             if (error) throw error;
             toast.success("Perfil atualizado com sucesso!");
-        } catch (err: any) {
-            toast.error(err.message || "Erro ao atualizar perfil");
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "Erro ao atualizar perfil";
+            toast.error(message);
         } finally {
             setSaving(false);
         }
     };
+
+    if (authLoading) {
+        return (
+            <div className="min-h-screen bg-background">
+                <Navbar />
+                <div className="max-w-2xl mx-auto px-4 pt-24 pb-16">
+                    <div className="flex justify-center py-12">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     if (!user) return null;
 
