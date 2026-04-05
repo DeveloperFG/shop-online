@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import TermsModal from "@/components/TermsModal";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import {
@@ -35,10 +36,8 @@ const Dashboard = () => {
   const [portalLoading, setPortalLoading] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  console.log("SUBSCRIPTION:", subscription)
-  console.log("USER:", user)
-  console.log("checkingSubscription :", checkingSubscription)
-
+  const [showTerms, setShowTerms] = useState(false);
+  const [usuario, setUsuario] = useState<unknown>(null);
 
   // Form state
   const [name, setName] = useState("");
@@ -48,6 +47,9 @@ const Dashboard = () => {
   const [quantity, setQuantity] = useState("1");
   const [category, setCategory] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
+
+  const TERMS_VERSION = "v1.0";
+
 
   useEffect(() => {
     if (authLoading) return;
@@ -64,6 +66,35 @@ const Dashboard = () => {
       toast.info("Checkout cancelado.");
     }
   }, [user, authLoading, navigate, searchParams]);
+
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const currentUser = userData.user;
+      setUsuario(currentUser);
+
+      if (!currentUser) return;
+
+      // verifica se já aceitou
+      const { data } = await supabase
+        .from("user_terms_acceptance")
+        .select("*")
+        .eq("user_id", currentUser.id)
+        .eq("terms_version", TERMS_VERSION)
+        .maybeSingle();
+
+      if (!data) {
+        // delay de 3 segundos
+        setTimeout(() => {
+          setShowTerms(true);
+        }, 3000);
+      }
+    };
+
+    loadUser();
+  }, []);
+
 
   const fetchProducts = async () => {
     if (!user) return;
@@ -103,11 +134,6 @@ const Dashboard = () => {
 
   const handleSave = async () => {
 
-    // const { data: sessionData } = await supabase.auth.getSession()
-
-    // console.log("USER ID (context):", user.id)
-
-    // console.log("SESSION:", sessionData)
 
     if (!user || !name.trim() || !price) return;
     setSaving(true);
@@ -215,6 +241,12 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
+      {showTerms && user && (
+        <TermsModal
+          user={user}
+          onAccept={() => setShowTerms(false)}
+        />
+      )}
       <div className="max-w-6xl mx-auto px-4 pt-24 pb-16 space-y-8">
         {/* Subscription Status */}
         <Card className={subscription.subscribed ? "border-primary ring-1 ring-primary/20" : ""}>

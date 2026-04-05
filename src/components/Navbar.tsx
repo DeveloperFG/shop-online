@@ -27,7 +27,7 @@ const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <Link to="/" className="text-xl font-bold tracking-tight text-foreground">
-          SHOP<span className="text-primary">-QXB</span>
+          AQui<span className="text-primary">-Shopping</span>
         </Link>
 
         {/* Desktop */}
