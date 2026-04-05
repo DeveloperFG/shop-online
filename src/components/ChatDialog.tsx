@@ -184,7 +184,7 @@ const ChatDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[70vh] max-h-[600px] flex-col sm:max-w-md">
+      <DialogContent className="w-[calc(100%-2rem)] max-w-md mx-auto ...">
         <DialogHeader>
           <DialogTitle className="text-base">
             Chat com {sellerName}
@@ -208,24 +208,21 @@ const ChatDialog = ({
               {messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`flex ${
-                    msg.sender_id === user?.id ? "justify-end" : "justify-start"
-                  }`}
+                  className={`flex ${msg.sender_id === user?.id ? "justify-end" : "justify-start"
+                    }`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
-                      msg.sender_id === user?.id
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-foreground"
-                    }`}
+                    className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${msg.sender_id === user?.id
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-foreground"
+                      }`}
                   >
                     <p>{msg.content}</p>
                     <p
-                      className={`mt-1 text-[10px] ${
-                        msg.sender_id === user?.id
-                          ? "text-primary-foreground/60"
-                          : "text-muted-foreground"
-                      }`}
+                      className={`mt-1 text-[10px] ${msg.sender_id === user?.id
+                        ? "text-primary-foreground/60"
+                        : "text-muted-foreground"
+                        }`}
                     >
                       {new Date(msg.created_at).toLocaleTimeString("pt-BR", {
                         hour: "2-digit",

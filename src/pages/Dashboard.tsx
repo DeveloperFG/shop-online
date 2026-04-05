@@ -88,7 +88,7 @@ const Dashboard = () => {
         // delay de 3 segundos
         setTimeout(() => {
           setShowTerms(true);
-        }, 3000);
+        }, 2000);
       }
     };
 

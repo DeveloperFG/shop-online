@@ -23,6 +23,10 @@ Uma plataforma para você divulgar seu produto novo ou usado que estão a venda.
 - Supabase (Banco de dados)
 - tailwindcss
 - ContextAPI
+- lucide-react
+- radix-ui
+- date-fns
+- zod
 
 ---
 
@@ -36,4 +40,6 @@ Uma plataforma para você divulgar seu produto novo ou usado que estão a venda.
 
 ---
 
+## 🛠 Testes
+- testing-library/jest-dom
 

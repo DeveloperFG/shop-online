@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Loader2 } from "lucide-react";
+import { MessageCircle, Loader2, Trash2 } from "lucide-react";
 import ChatDialog from "./ChatDialog";
 
 interface Conversation {
@@ -56,7 +56,6 @@ const ConversationsList = ({ open, onOpenChange }: ConversationsListProps) => {
       return;
     }
 
-    // Get product names and other user names
     const productIds = convs.map((c) => c.product_id).filter(Boolean) as string[];
     const otherUserIds = convs.map((c) =>
       c.buyer_id === user.id ? c.seller_id : c.buyer_id
@@ -79,7 +78,6 @@ const ConversationsList = ({ open, onOpenChange }: ConversationsListProps) => {
     const productMap = new Map((products ?? []).map((p) => [p.id, p.name]));
     const profileMap = new Map((profiles ?? []).map((p) => [p.user_id, p.name]));
 
-    // Count unread per conversation
     const unreadMap = new Map<string, number>();
     (unreadMessages ?? []).forEach((m) => {
       unreadMap.set(m.conversation_id, (unreadMap.get(m.conversation_id) ?? 0) + 1);
@@ -100,6 +98,35 @@ const ConversationsList = ({ open, onOpenChange }: ConversationsListProps) => {
   const openChat = (conv: Conversation) => {
     setSelectedConv(conv);
     setChatOpen(true);
+  };
+
+  const handleDeleteConversation = async (convId: string) => {
+    const confirmDelete = window.confirm("Deseja excluir esta conversa?");
+    if (!confirmDelete) return;
+
+    try {
+      // 🔥 Deleta mensagens (caso NÃO tenha cascade no banco)
+      const { error: msgError } = await supabase
+        .from("messages")
+        .delete()
+        .eq("conversation_id", convId);
+
+      if (msgError) throw msgError;
+
+      // 🔥 Deleta a conversa
+      const { error: convError } = await supabase
+        .from("conversations")
+        .delete()
+        .eq("id", convId);
+
+      if (convError) throw convError;
+
+      // ✅ Só atualiza UI depois que deu tudo certo
+      setConversations((prev) => prev.filter((c) => c.id !== convId));
+    } catch (err) {
+      console.error("Erro ao deletar conversa:", err);
+      alert("Erro ao excluir conversa. Tente novamente.");
+    }
   };
 
   return (
@@ -124,28 +151,43 @@ const ConversationsList = ({ open, onOpenChange }: ConversationsListProps) => {
             ) : (
               <div className="divide-y divide-border">
                 {conversations.map((conv) => (
-                  <button
+                  <div
                     key={conv.id}
-                    onClick={() => openChat(conv)}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50"
+                    className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-muted/50"
                   >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      <MessageCircle className="h-4 w-4" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {conv.other_name}
-                      </p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {conv.product_name}
-                      </p>
-                    </div>
-                    {(conv.unread_count ?? 0) > 0 && (
-                      <Badge variant="destructive" className="shrink-0 text-xs px-1.5 py-0.5">
-                        {conv.unread_count}
-                      </Badge>
-                    )}
-                  </button>
+                    {/* Área clicável */}
+                    <button
+                      onClick={() => openChat(conv)}
+                      className="flex flex-1 items-center gap-3 text-left"
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                        <MessageCircle className="h-4 w-4" />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-foreground">
+                          {conv.other_name}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {conv.product_name}
+                        </p>
+                      </div>
+
+                      {(conv.unread_count ?? 0) > 0 && (
+                        <Badge className="shrink-0 text-xs px-1.5 py-0.5">
+                          {conv.unread_count}
+                        </Badge>
+                      )}
+                    </button>
+
+                    {/* Lixeira */}
+                    <button
+                      onClick={() => handleDeleteConversation(conv.id)}
+                      className="ml-2 p-2 rounded-md hover:bg-red-500/10 text-muted-foreground hover:text-red-500 transition"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -158,9 +200,7 @@ const ConversationsList = ({ open, onOpenChange }: ConversationsListProps) => {
           open={chatOpen}
           onOpenChange={(o) => {
             setChatOpen(o);
-            if (!o) {
-              loadConversations();
-            }
+            if (!o) loadConversations();
           }}
           conversationId={selectedConv.id}
           sellerId={
