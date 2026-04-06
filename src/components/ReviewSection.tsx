@@ -39,11 +39,10 @@ const StarRating = ({
         onClick={() => onChange?.(star)}
       >
         <Star
-          className={`h-5 w-5 ${
-            star <= value
+          className={`h-5 w-5 ${star <= value
               ? "fill-primary text-primary"
               : "text-muted-foreground/30"
-          }`}
+            }`}
         />
       </button>
     ))}
@@ -129,7 +128,7 @@ const ReviewSection = ({ sellerId, productId }: ReviewSectionProps) => {
       {user && !isOwnProduct && !alreadyReviewed && (
         <Card>
           <CardContent className="p-4 space-y-3">
-            <p className="text-sm font-medium text-foreground">Deixe sua avaliação</p>
+            <p className="text-sm font-medium text-foreground">Avaliar vendedor</p>
             <StarRating value={rating} onChange={setRating} />
             <Textarea
               placeholder="Comentário (opcional)"

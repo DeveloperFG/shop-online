@@ -48,12 +48,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       });
 
-      console.log("data :", data)
-      console.log("error :", error)
-
-      console.log("Subscription raw", subscription);
-      console.log("current_period_end", subscription.current_period_end);
-
       if (error) {
         const errText = await error.context.text(); // 👈 ESSENCIAL
         console.error("Function error body:", errText);
@@ -79,8 +73,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       (_event, session) => {
         setUser(session?.user ?? null);
         setLoading(false);
-        console.log("session :", session)
-        console.log("event :", subscription)
 
         if (session?.user) {
           // Defer to avoid Supabase deadlock

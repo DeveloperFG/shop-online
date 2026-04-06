@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import TermsModal from "@/components/TermsModal";
+import CompleteProfileModal from "@/components/CompleteProfileModal";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import {
@@ -38,6 +39,7 @@ const Dashboard = () => {
 
   const [showTerms, setShowTerms] = useState(false);
   const [usuario, setUsuario] = useState<unknown>(null);
+  const [showChangesProfile, setShowChangesProfile] = useState(false);
 
   // Form state
   const [name, setName] = useState("");
@@ -72,22 +74,51 @@ const Dashboard = () => {
     const loadUser = async () => {
       const { data: userData } = await supabase.auth.getUser();
       const currentUser = userData.user;
+
       setUsuario(currentUser);
 
       if (!currentUser) return;
 
-      // verifica se já aceitou
-      const { data } = await supabase
+      // 🔹 1. Verifica se já aceitou os termos
+      const { data: termsData, error: termsError } = await supabase
         .from("user_terms_acceptance")
         .select("*")
         .eq("user_id", currentUser.id)
         .eq("terms_version", TERMS_VERSION)
         .maybeSingle();
 
-      if (!data) {
-        // delay de 3 segundos
+      if (termsError) {
+        console.error("Erro ao buscar termos:", termsError);
+        return;
+      }
+
+      // ❌ NÃO aceitou → abre modal de termos
+      if (!termsData) {
         setTimeout(() => {
           setShowTerms(true);
+        }, 2000);
+        return;
+      }
+
+      // 🔹 2. Já aceitou → verifica profile
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("location, phone")
+        .eq("user_id", currentUser.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error("Erro ao buscar profile:", profileError);
+        return;
+      }
+
+      // ❌ Se NÃO tiver location ou phone → abre modal
+      const isProfileIncomplete =
+        !profileData?.location || !profileData?.phone;
+
+      if (isProfileIncomplete) {
+        setTimeout(() => {
+          setShowChangesProfile(true);
         }, 2000);
       }
     };
@@ -245,6 +276,11 @@ const Dashboard = () => {
         <TermsModal
           user={user}
           onAccept={() => setShowTerms(false)}
+        />
+      )}
+      {showChangesProfile && user && (
+        <CompleteProfileModal
+          onClose={() => setShowChangesProfile(false)}
         />
       )}
       <div className="max-w-6xl mx-auto px-4 pt-24 pb-16 space-y-8">

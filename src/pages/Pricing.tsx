@@ -70,9 +70,8 @@ const Pricing = () => {
         <div className="grid md:grid-cols-2 gap-8">
           {/* Free Plan */}
           <Card
-            className={`relative border-border transition-shadow ${
-              isFreeActive ? "ring-2 ring-primary shadow-md" : ""
-            }`}
+            className={`relative border-border transition-shadow ${isFreeActive ? "ring-2 ring-primary shadow-md" : ""
+              }`}
           >
             {isFreeActive && (
               <div className="absolute -top-3 right-4">
@@ -123,9 +122,8 @@ const Pricing = () => {
 
           {/* Premium Plan */}
           <Card
-            className={`relative border-primary shadow-lg transition-shadow ${
-              isPremiumActive ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : "ring-2 ring-primary/20"
-            }`}
+            className={`relative border-primary shadow-lg transition-shadow ${isPremiumActive ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : "ring-2 ring-primary/20"
+              }`}
           >
             <div className="absolute -top-3 left-1/2 flex -translate-x-1/2 flex-wrap items-center justify-center gap-2">
               {isPremiumActive ? (

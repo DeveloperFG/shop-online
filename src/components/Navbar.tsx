@@ -9,6 +9,7 @@ import { Menu, Sun, Moon, MessageCircle, LogOut, User } from "lucide-react";
 import { useState } from "react";
 import ConversationsList from "./ConversationsList";
 import ProfileMenu from "./ProfileMenu";
+import UserRankingModal from "./UserRankingModal";
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
@@ -16,6 +17,8 @@ const Navbar = () => {
   const { unreadCount } = useUnreadMessages();
   const [open, setOpen] = useState(false);
   const [messagesOpen, setMessagesOpen] = useState(false);
+
+  const [rankingOpen, setRankingOpen] = useState(false);
 
   const links = [
     { to: "/catalog", label: "Catálogo" },
@@ -81,6 +84,15 @@ const Navbar = () => {
                   Meu Perfil
                 </Link>
               )}
+              <button
+                onClick={() => {
+                  setRankingOpen(true);
+                  setOpen(false);
+                }}
+                className="flex items-center gap-2 text-lg font-medium text-foreground text-left"
+              >
+                Ranking
+              </button>
               <Button variant="outline" size="sm" onClick={toggleTheme} className="justify-start">
                 {theme === "dark" ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
                 {theme === "dark" ? "Modo claro" : "Modo escuro"}
@@ -108,6 +120,11 @@ const Navbar = () => {
           </SheetContent>
         </Sheet>
         {user && <ConversationsList open={messagesOpen} onOpenChange={setMessagesOpen} />}
+        {user && rankingOpen && (
+          <UserRankingModal
+            onClose={() => setRankingOpen(false)}
+          />
+        )}
       </div>
     </nav>
   );
