@@ -2,6 +2,10 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/hooks/use-theme";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+
+import { Image } from "@radix-ui/react-avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -10,6 +14,8 @@ import { useState } from "react";
 import ConversationsList from "./ConversationsList";
 import ProfileMenu from "./ProfileMenu";
 import UserRankingModal from "./UserRankingModal";
+
+import logo from "@/assets/logo.png";
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
@@ -23,18 +29,29 @@ const Navbar = () => {
   const links = [
     { to: "/catalog", label: "Catálogo" },
     { to: "/pricing", label: "Planos" },
+    // { to: "/ranking", label: "Ranking" },
     ...(user ? [{ to: "/dashboard", label: "Dashboard" }] : []),
   ];
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-        <Link to="/" className="text-xl font-bold tracking-tight text-foreground">
-          AQui<span className="text-primary">-Shopping</span>
+
+        <Link to="/">
+          <img src="/logo.png" alt="AQui-Tem Logo" className="h-8 w-auto" />
         </Link>
 
         {/* Desktop */}
         <div className="hidden items-center gap-4 md:flex">
+          <button
+            onClick={() => {
+              setRankingOpen(true);
+              setOpen(false);
+            }}
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Ranking
+          </button>
           {links.map((l) => (
             <Link key={l.to} to={l.to} className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
               {l.label}

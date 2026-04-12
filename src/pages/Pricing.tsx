@@ -13,9 +13,9 @@ const features = [
   { name: "Fotos dos produtos", free: true, premium: true },
   { name: "Perfil público", free: true, premium: true },
   { name: "Avaliações e reputação", free: true, premium: true },
-  { name: "Destaque nos resultados", free: false, premium: true },
-  { name: "Suporte prioritário", free: false, premium: true },
-  { name: "Selo de vendedor Premium", free: false, premium: true },
+  // { name: "Destaque nos resultados", free: false, premium: true },
+  // { name: "Suporte prioritário", free: false, premium: true },
+  // { name: "Selo de vendedor Premium", free: false, premium: true },
 ];
 
 const Pricing = () => {
@@ -138,7 +138,7 @@ const Pricing = () => {
             </div>
             <CardHeader className="pb-4">
               <CardTitle className="text-2xl text-foreground">Premium</CardTitle>
-              <CardDescription>Para vendedores profissionais</CardDescription>
+              <CardDescription>Aumente suas vendas com mais recursos </CardDescription>
               {isPremiumActive && subscription.subscription_end && (
                 <p className="mt-2 text-sm text-muted-foreground">
                   Renova em{" "}
@@ -184,7 +184,7 @@ const Pricing = () => {
         </div>
 
         <p className="text-center text-xs text-muted-foreground mt-8">
-          Cancele a qualquer momento. Sem compromisso.
+          Cancele a qualquer momento.
         </p>
       </div>
     </div>
