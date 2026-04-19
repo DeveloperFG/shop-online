@@ -10,10 +10,12 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, LogOut, LayoutDashboard } from "lucide-react";
+import { User, LogOut, LayoutDashboard, Shield } from "lucide-react";
+import { useAdmin } from "@/hooks/useAdmin";
 
 const ProfileMenu = () => {
     const { user, signOut } = useAuth();
+    const { isAdmin } = useAdmin();
     const [profile, setProfile] = useState<{ name: string; avatar_url: string | null } | null>(null);
 
     useEffect(() => {
@@ -73,6 +75,13 @@ const ProfileMenu = () => {
                         <LayoutDashboard className="h-4 w-4 mr-2" /> Dashboard
                     </Link>
                 </DropdownMenuItem>
+                {isAdmin && (
+                    <DropdownMenuItem asChild>
+                        <Link to="/admin" className="cursor-pointer">
+                            <Shield className="h-4 w-4 mr-2" /> Administração
+                        </Link>
+                    </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={signOut} className="cursor-pointer text-destructive focus:text-destructive">
                     <LogOut className="h-4 w-4 mr-2" /> Sair

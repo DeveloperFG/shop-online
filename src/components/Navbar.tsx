@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/hooks/use-theme";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+import { useAdmin } from "@/hooks/useAdmin";
 
 import { Image } from "@radix-ui/react-avatar";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -9,7 +10,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Sun, Moon, MessageCircle, LogOut, User } from "lucide-react";
+import { Menu, Sun, Moon, MessageCircle, LogOut, Shield } from "lucide-react";
 import { useState } from "react";
 import ConversationsList from "./ConversationsList";
 import ProfileMenu from "./ProfileMenu";
@@ -21,6 +22,7 @@ const Navbar = () => {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { unreadCount } = useUnreadMessages();
+  const { isAdmin } = useAdmin();
   const [open, setOpen] = useState(false);
   const [messagesOpen, setMessagesOpen] = useState(false);
 
@@ -97,10 +99,10 @@ const Navbar = () => {
                   onClick={() => setOpen(false)}
                   className="flex items-center gap-2 text-lg font-medium text-foreground"
                 >
-                  {/* <User className="h-5 w-5 shrink-0" /> */}
                   Meu Perfil
                 </Link>
               )}
+
               <button
                 onClick={() => {
                   setRankingOpen(true);
@@ -110,6 +112,17 @@ const Navbar = () => {
               >
                 Ranking
               </button>
+
+              {user && isAdmin && (
+                <Link
+                  to="/admin"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2 text-lg font-medium text-foreground"
+                >
+                  Administração
+                </Link>
+              )}
+
               <Button variant="outline" size="sm" onClick={toggleTheme} className="justify-start">
                 {theme === "dark" ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
                 {theme === "dark" ? "Modo claro" : "Modo escuro"}

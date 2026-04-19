@@ -4,6 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import { ArrowRight, Package, Shield, Star } from "lucide-react";
 
+import BannerCarousel from "@/components/BannerCarousel";
+
 const features = [
   { icon: Package, title: "Gerencie Produtos", desc: "Cadastre e organize seus produtos com facilidade." },
   { icon: Shield, title: "Seguro & Confiável", desc: "Seus dados protegidos com autenticação robusta." },
@@ -17,8 +19,13 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
+      {/* Banner Carousel */}
+      <div className=" -mb-20">
+        <BannerCarousel />
+      </div>
+
       {/* Hero */}
-      <section className="relative flex min-h-[85vh] items-center justify-center overflow-hidden px-4 pt-16">
+      <section className="relative flex min-h-[85vh] items-center justify-center overflow-hidden px-4 ">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/10" />
         <div className="relative z-10 mx-auto max-w-3xl text-center">
           <span className="mb-4 inline-block rounded-full border border-border bg-muted px-4 py-1.5 text-xs font-medium text-muted-foreground">

@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      banned_users: {
+        Row: {
+          banned_by: string
+          created_at: string
+          id: string
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          banned_by: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          banned_by?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      banners: {
+        Row: {
+          is_active: boolean
+          created_at: string
+          display_order: number
+          id: string
+          image_url: string
+          title: string | null
+        }
+        Insert: {
+          is_active?: boolean
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url: string
+          title?: string | null
+        }
+        Update: {
+          is_active?: boolean
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url?: string
+          title?: string | null
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           buyer_id: string
