@@ -16,6 +16,7 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import AcceptTerms from "./pages/AcceptTerms";
 import Admin from "./pages/Admin";
+import Banned from "./pages/Banned";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/profile" element={<Profile />} />
               <Route path="/accept-terms" element={<AcceptTerms />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/banido" element={<Banned />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

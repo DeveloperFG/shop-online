@@ -45,6 +45,11 @@ const Navbar = () => {
 
         {/* Desktop */}
         <div className="hidden items-center gap-4 md:flex">
+          {links.map((l) => (
+            <Link key={l.to} to={l.to} className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+              {l.label}
+            </Link>
+          ))}
           <button
             onClick={() => {
               setRankingOpen(true);
@@ -54,11 +59,6 @@ const Navbar = () => {
           >
             Ranking
           </button>
-          {links.map((l) => (
-            <Link key={l.to} to={l.to} className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-              {l.label}
-            </Link>
-          ))}
           <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-9 w-9">
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>

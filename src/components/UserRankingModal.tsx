@@ -151,7 +151,7 @@ const UserRankingModal = ({ onClose }: { onClose: () => void }) => {
                             </div>
                             <div>
                                 <h2 className="text-base font-bold tracking-tight">Ranking de Usuários</h2>
-                                <p className="text-blue-100 text-xs mt-0.5">Classificado por avaliações e nota média</p>
+                                {/* <p className="text-blue-100 text-xs mt-0.5">Classificado por avaliações e nota média</p> */}
                             </div>
                         </div>
                         <button
