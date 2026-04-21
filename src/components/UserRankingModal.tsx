@@ -262,9 +262,9 @@ const UserRankingModal = ({ onClose }: { onClose: () => void }) => {
                                             <div className="flex items-center gap-2 mt-0.5">
                                                 <StarRating rating={user.average_rating} />
                                             </div>
-                                            <span className="text-xs text-gray-400">
+                                            {/* <span className="text-xs text-gray-400">
                                                 {user.total_reviews} {user.total_reviews === 1 ? "avaliação" : "avaliações"}
-                                            </span>
+                                            </span> */}
                                         </div>
 
                                         {/* Score */}

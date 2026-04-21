@@ -19,7 +19,7 @@ import UserRankingModal from "./UserRankingModal";
 import logo from "@/assets/logo.png";
 
 const Navbar = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, subscription } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { unreadCount } = useUnreadMessages();
   const { isAdmin } = useAdmin();
@@ -33,7 +33,9 @@ const Navbar = () => {
     { to: "/pricing", label: "Planos" },
     // { to: "/ranking", label: "Ranking" },
     ...(user ? [{ to: "/dashboard", label: "Dashboard" }] : []),
+    ...(subscription.plan_tier === "enterprise" ? [{ to: "/minha-empresa", label: "Minha Empresa" }] : []),
   ];
+
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl">

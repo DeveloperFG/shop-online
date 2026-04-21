@@ -17,6 +17,9 @@ import NotFound from "./pages/NotFound";
 import AcceptTerms from "./pages/AcceptTerms";
 import Admin from "./pages/Admin";
 import Banned from "./pages/Banned";
+import Companies from "./pages/Companies";
+import CompanyDetail from "./pages/CompanyDetail";
+import MyCompany from "./pages/MyCompany";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +43,9 @@ const App = () => (
               <Route path="/accept-terms" element={<AcceptTerms />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/banido" element={<Banned />} />
+              <Route path="/empresas" element={<Companies />} />
+              <Route path="/empresa/:id" element={<CompanyDetail />} />
+              <Route path="/minha-empresa" element={<MyCompany />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

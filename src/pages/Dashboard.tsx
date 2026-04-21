@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import {
   Crown, Package, Plus, Pencil, Trash2, CreditCard,
-  RefreshCw, ShieldCheck, Loader2, Eye, EyeOff
+  RefreshCw, ShieldCheck, Loader2, Eye, EyeOff, Building2
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PRODUCT_CATEGORIES } from "@/constants/categories";
@@ -291,7 +291,11 @@ const Dashboard = () => {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   {subscription.subscribed ? (
-                    <><ShieldCheck className="h-5 w-5 text-primary" /> Plano Premium</>
+                    subscription.plan_tier === "enterprise" ? (
+                      <><Building2 className="h-5 w-5 text-primary" /> Premium Enterprise</>
+                    ) : (
+                      <><ShieldCheck className="h-5 w-5 text-primary" /> Plano Premium</>
+                    )
                   ) : (
                     <><Package className="h-5 w-5 text-muted-foreground" /> Plano Grátis</>
                   )}

@@ -28,6 +28,26 @@ serve(async (req) => {
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
 
+    let plan: "premium" | "enterprise" = "premium";
+    try {
+      const body = await req.json();
+      if (body?.plan === "enterprise") plan = "enterprise";
+    } catch {
+      /* body vazio ou não-JSON */
+    }
+
+    const premiumPriceId = Deno.env.get("STRIPE_PRICE_PREMIUM") ?? "";
+    const enterprisePriceId = Deno.env.get("STRIPE_PRICE_ENTERPRISE") ?? "";
+    const priceId =
+      plan === "enterprise"
+        ? enterprisePriceId
+        : premiumPriceId;
+    if (!priceId) {
+      throw new Error(
+        "STRIPE_PRICE_ENTERPRISE is not set (configure o preço Enterprise no Stripe e o secret na função)",
+      );
+    }
+
     const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
     const { data } = await supabaseClient.auth.getUser(token);
@@ -49,7 +69,7 @@ serve(async (req) => {
       customer_email: customerId ? undefined : user.email,
       line_items: [
         {
-          price: "price_1THUO1Q7BxxwuSuprDhADICf",
+          price: priceId,
           quantity: 1,
         },
       ],

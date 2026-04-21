@@ -30,6 +30,11 @@ serve(async (req) => {
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
 
+    const premiumProductId = (Deno.env.get("STRIPE_PRODUCT_ID_PREMIUM") ?? "").trim();
+    const enterpriseProductId = (Deno.env.get("STRIPE_PRODUCT_ID_ENTERPRISE") ?? "").trim();
+    const premiumPriceId = (Deno.env.get("STRIPE_PRICE_PREMIUM") ?? "").trim();
+    const enterprisePriceId = (Deno.env.get("STRIPE_PRICE_ENTERPRISE") ?? "").trim();
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
 
@@ -66,6 +71,7 @@ serve(async (req) => {
           subscribed: false,
           product_id: null,
           subscription_end: null,
+          plan_tier: "free",
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -90,6 +96,7 @@ serve(async (req) => {
 
     let productId: string | null = null;
     let subscriptionEnd: string | null = null;
+    let planTier: "free" | "premium" | "enterprise" = "free";
 
     if (hasActiveSub && subscriptions.data[0]) {
       const subscription = subscriptions.data[0];
@@ -108,13 +115,45 @@ serve(async (req) => {
         subscriptionEnd = null;
       }
 
-      // ✅ PROTEÇÃO DO product
       const item = subscription.items?.data?.[0];
-      productId = item?.price?.product ?? null;
+      const price = item?.price;
+      const priceId = price?.id ? String(price.id) : null;
+      const rawProduct = price?.product;
+      if (typeof rawProduct === "string") {
+        productId = rawProduct;
+      } else if (
+        rawProduct &&
+        typeof rawProduct === "object" &&
+        "id" in rawProduct
+      ) {
+        productId = (rawProduct as { id: string }).id;
+      } else {
+        productId = null;
+      }
+
+      if (enterpriseProductId && productId === enterpriseProductId) {
+        planTier = "enterprise";
+      } else if (premiumProductId && productId === premiumProductId) {
+        planTier = "premium";
+      } else if (enterprisePriceId && priceId === enterprisePriceId) {
+        planTier = "enterprise";
+      } else if (premiumPriceId && priceId === premiumPriceId) {
+        planTier = "premium";
+      } else {
+        planTier = "premium";
+        logStep("Unmatched product/price; defaulting to premium", {
+          productId,
+          priceId,
+          enterpriseProductId: enterpriseProductId || "(not set)",
+          premiumProductId: premiumProductId || "(not set)",
+        });
+      }
 
       logStep("Active subscription processed", {
         subscriptionEnd,
         productId,
+        priceId,
+        planTier,
       });
 
       // 🔄 Sync com banco
@@ -169,6 +208,7 @@ serve(async (req) => {
         subscribed: hasActiveSub,
         product_id: productId,
         subscription_end: subscriptionEnd,
+        plan_tier: hasActiveSub ? planTier : "free",
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
