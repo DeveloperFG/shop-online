@@ -21,8 +21,6 @@ const BannerCarousel = () => {
                 .select("id, image_url, title")
                 .eq("is_active", true)
                 .order("display_order");
-            console.log("error", error);
-            console.log("data", data);
             if (data && data.length > 0) setBanners(data);
         };
         fetch();

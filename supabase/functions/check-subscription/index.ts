@@ -13,6 +13,36 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
 };
 
+
+function getSubscriptionPeriodEnd(
+  subscription: Stripe.Subscription
+): string | null {
+
+  // tenta pelo objeto principal
+  if (
+    subscription.current_period_end &&
+    typeof subscription.current_period_end === "number"
+  ) {
+    return new Date(
+      subscription.current_period_end * 1000
+    ).toISOString();
+  }
+
+  // fallback
+  const item = subscription.items?.data?.[0] as any;
+
+  if (
+    item?.current_period_end &&
+    typeof item.current_period_end === "number"
+  ) {
+    return new Date(
+      item.current_period_end * 1000
+    ).toISOString();
+  }
+
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -86,11 +116,14 @@ serve(async (req) => {
 
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
-      status: "active",
-      limit: 1,
+      status: "all",
+      limit: 20,
     });
 
-    const hasActiveSub = subscriptions.data.length > 0;
+    const subscription = subscriptions.data.find(
+      (s) => s.status === "active" || s.status === "trialing"
+    );
+    const hasActiveSub = Boolean(subscription);
 
     logStep("hasActiveSub", { hasActiveSub });
 
@@ -98,22 +131,13 @@ serve(async (req) => {
     let subscriptionEnd: string | null = null;
     let planTier: "free" | "premium" | "enterprise" = "free";
 
-    if (hasActiveSub && subscriptions.data[0]) {
-      const subscription = subscriptions.data[0];
+    if (hasActiveSub && subscription) {
 
       const stripeSubId = subscription.id;
 
       logStep("Stripe subscription", subscription);
 
-      // ✅ PROTEÇÃO DO current_period_end
-      const periodEnd = subscription.current_period_end;
-
-      if (periodEnd && typeof periodEnd === "number") {
-        subscriptionEnd = new Date(periodEnd * 1000).toISOString();
-      } else {
-        logStep("Invalid period_end", subscription);
-        subscriptionEnd = null;
-      }
+      subscriptionEnd = getSubscriptionPeriodEnd(subscription);
 
       const item = subscription.items?.data?.[0];
       const price = item?.price;

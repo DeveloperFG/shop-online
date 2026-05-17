@@ -44,7 +44,9 @@ serve(async (req) => {
         : premiumPriceId;
     if (!priceId) {
       throw new Error(
-        "STRIPE_PRICE_ENTERPRISE is not set (configure o preço Enterprise no Stripe e o secret na função)",
+        plan === "enterprise"
+          ? "STRIPE_PRICE_ENTERPRISE is not set (configure o preço no Stripe e o secret na função)"
+          : "STRIPE_PRICE_PREMIUM is not set (configure o preço no Stripe e o secret na função)",
       );
     }
 
@@ -76,6 +78,14 @@ serve(async (req) => {
       mode: "subscription",
       success_url: `${origin}/dashboard?checkout=success`,
       cancel_url: `${origin}/dashboard?checkout=cancel`,
+      metadata: {
+        supabase_user_id: user.id,
+      },
+      subscription_data: {
+        metadata: {
+          supabase_user_id: user.id,
+        },
+      },
     });
 
     logStep("Checkout session created", { sessionId: session.id });

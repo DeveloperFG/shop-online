@@ -46,9 +46,9 @@ const Index = () => {
                 {user ? "Ir ao Dashboard" : "Começar Grátis"} <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
+            {/* <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
               <Link to="/pricing">Ver Planos</Link>
-            </Button>
+            </Button> */}
           </div>
         </div>
       </section>

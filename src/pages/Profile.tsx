@@ -84,7 +84,7 @@ const Profile = () => {
             const path = `avatars/${user.id}/${Date.now()}.${ext}`;
             const { error: uploadError } = await supabase.storage
                 .from("product-images")
-                .upload(path, file, { upsert: true });
+                .upload(path, file,);
             if (uploadError) throw uploadError;
 
             const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(path);

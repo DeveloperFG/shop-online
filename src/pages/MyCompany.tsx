@@ -361,7 +361,7 @@ const MyCompany = () => {
                                 </DialogTrigger>
                                 <DialogContent>
                                     <DialogHeader>
-                                        <DialogTitle>Novo produto</DialogTitle>
+                                        <DialogTitle>Novo produtssso</DialogTitle>
                                     </DialogHeader>
                                     <div className="space-y-4">
                                         <div>

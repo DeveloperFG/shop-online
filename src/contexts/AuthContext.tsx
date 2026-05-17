@@ -35,6 +35,7 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
+/** Vite only exposes env vars prefixed with VITE_ to the browser. */
 const STRIPE_PRODUCT_ID_PREMIUM = (
   import.meta.env.VITE_STRIPE_PRODUCT_ID_PREMIUM as string | undefined
 )?.trim() ?? "";
@@ -68,8 +69,10 @@ function planTierFromProductAndResponse(data: {
     return "premium";
   }
 
-  const t = data.plan_tier;
-  if (t === "free" || t === "premium" || t === "enterprise") return t;
+  const t = data.plan_tier?.trim().toLowerCase();
+  if (t === "free" || t === "premium" || t === "enterprise") {
+    return t;
+  }
 
   return subscribed ? "premium" : "free";
 }
@@ -135,7 +138,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (data) {
-        // 🔥 CORREÇÃO AQUI
         const resolvedPlan = planTierFromProductAndResponse({
           subscribed: data.subscribed,
           product_id: data.product_id,

@@ -3,9 +3,26 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+
+async function messageFromFunctionError(error: unknown): Promise<string> {
+  if (error instanceof FunctionsHttpError) {
+    try {
+      const body: unknown = await error.context.json();
+      if (body && typeof body === "object" && "error" in body) {
+        const msg = (body as { error?: unknown }).error;
+        if (typeof msg === "string" && msg.trim()) return msg.trim();
+      }
+    } catch {
+      /* corpo não é JSON */
+    }
+  }
+  return "";
+}
 
 const features = [
   { name: "Cadastrar produtos", free: true, premium: true, enterprise: true },
@@ -14,7 +31,7 @@ const features = [
   { name: "Perfil público", free: true, premium: true, enterprise: true },
   { name: "Avaliações e reputação", free: true, premium: true, enterprise: true },
   { name: "Suporte prioritário por e-mail", free: false, premium: true, enterprise: true },
-  { name: "Suporte dedicado e onboarding", free: false, premium: false, enterprise: true },
+  { name: "Cadastre sua empresa e produtos", free: false, premium: false, enterprise: true },
 ];
 
 const Pricing = () => {
@@ -37,9 +54,12 @@ const Pricing = () => {
 
   const handleCheckout = async (plan: "premium" | "enterprise") => {
     setLoading(plan);
+    const checkoutTab = window.open("about:blank", "_blank");
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
+        checkoutTab?.close();
+        toast.error("Faça login para assinar um plano.");
         navigate("/");
         return;
       }
@@ -47,9 +67,29 @@ const Pricing = () => {
         headers: { Authorization: `Bearer ${session.access_token}` },
         body: { plan },
       });
-      if (error) throw error;
-      if (data?.url) window.open(data.url, "_blank");
+
+      if (error) {
+        const fromBody = await messageFromFunctionError(error);
+        throw new Error(fromBody || error.message || "Não foi possível iniciar o checkout.");
+      }
+
+      const url =
+        data && typeof data === "object" && "url" in data ? (data as { url?: string }).url : undefined;
+
+      if (!url) {
+        throw new Error("Resposta sem URL do Stripe.");
+      }
+
+      try {
+        if (checkoutTab) checkoutTab.location.href = url;
+        else window.location.assign(url);
+      } catch {
+        window.location.assign(url);
+      }
     } catch (err) {
+      checkoutTab?.close();
+      const message = err instanceof Error ? err.message : "Erro ao abrir o checkout.";
+      toast.error(message);
       console.error("Checkout error:", err);
     } finally {
       setLoading(null);

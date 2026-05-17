@@ -137,6 +137,7 @@ export type Database = {
       }
       products: {
         Row: {
+          image_path: null
           category: string | null
           created_at: string
           description: string | null
@@ -264,6 +265,7 @@ export type Database = {
           is_active: boolean | null
           stripe_customer_id: string | null
           stripe_product_id: string | null
+          stripe_subscription_id: string | null
           subscription_end: string | null
           updated_at: string
           user_id: string
@@ -274,6 +276,7 @@ export type Database = {
           is_active?: boolean | null
           stripe_customer_id?: string | null
           stripe_product_id?: string | null
+          stripe_subscription_id?: string | null
           subscription_end?: string | null
           updated_at?: string
           user_id: string
@@ -284,6 +287,7 @@ export type Database = {
           is_active?: boolean | null
           stripe_customer_id?: string | null
           stripe_product_id?: string | null
+          stripe_subscription_id?: string | null
           subscription_end?: string | null
           updated_at?: string
           user_id?: string

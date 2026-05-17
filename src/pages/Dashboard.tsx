@@ -163,25 +163,49 @@ const Dashboard = () => {
     setDialogOpen(true);
   };
 
+
   const handleSave = async () => {
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user || !name.trim() || !price) return;
-    setSaving(true);
-    try {
-      let imageUrl = editing?.image_url || null;
 
+    setSaving(true);
+
+    try {
+
+      // Mantém valores antigos caso esteja editando
+      let imageUrl = editing?.image_url || null;
+      let imagePath = editing?.image_path || null;
+
+      // Upload da nova imagem
       if (imageFile) {
+
         const ext = imageFile.name.split(".").pop();
+
+        // Caminho da imagem no bucket
         const path = `${user.id}/${Date.now()}.${ext}`;
+
         const { error: uploadError } = await supabase.storage
           .from("product-images")
-          .upload(path, imageFile, { upsert: true });
+          .upload(path, imageFile);
+
         if (uploadError) throw uploadError;
-        const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(path);
+
+        // URL pública
+        const { data: urlData } = supabase.storage
+          .from("product-images")
+          .getPublicUrl(path);
+
         imageUrl = urlData.publicUrl;
+
+        // SALVA O PATH REAL
+        imagePath = path;
       }
 
+      // Dados do produto
       const productData: any = {
         name: name.trim(),
         price: parseFloat(price),
@@ -189,27 +213,57 @@ const Dashboard = () => {
         usage_time: usageTime.trim() || null,
         quantity: parseInt(quantity) || 1,
         category: category || null,
+
+        // URL pública
         image_url: imageUrl,
+
+        // Caminho interno do storage
+        image_path: imagePath,
+
         user_id: user.id,
       };
 
+      // Atualizar
       if (editing) {
-        const { error } = await supabase.from("products").update(productData).eq("id", editing.id);
+
+        const { error } = await supabase
+          .from("products")
+          .update(productData)
+          .eq("id", editing.id);
+
         if (error) throw error;
+
         toast.success("Produto atualizado!");
+
       } else {
-        // console.log("SESSION:", sessionData)
-        const { error } = await supabase.from("products").insert({ ...productData, status: "draft" });
+
+        // Criar novo produto
+        const { error } = await supabase
+          .from("products")
+          .insert({
+            ...productData,
+            status: "draft",
+          });
+
         if (error) throw error;
-        toast.success("Produto cadastrado! Publique-o para aparecer no catálogo.");
+
+        toast.success(
+          "Produto cadastrado! Publique-o para aparecer no catálogo."
+        );
       }
+
       setDialogOpen(false);
+
       fetchProducts();
+
     } catch (err: any) {
-      // toast.error(err.message || "Erro ao salvar produto");
-      console.log("FULL ERROR:", err)
+
+      console.log("FULL ERROR:", err);
+
       toast.error(err.message || "Erro ao salvar produto");
+
     } finally {
+
       setSaving(false);
     }
   };
@@ -225,17 +279,65 @@ const Dashboard = () => {
     fetchProducts();
   };
 
+
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase.from("products").delete().eq("id", id);
-      if (error) throw error;
+
+      // Busca produto
+      const { data: product, error: fetchError } = await supabase
+        .from("products")
+        .select("image_path")
+        .eq("id", id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Remove imagem do bucket
+      if (product?.image_path) {
+
+        console.log("IMAGE PATH:", product.image_path);
+
+        const { error: storageError } = await supabase.storage
+          .from("product-images")
+          .remove([product.image_path]);
+
+        if (storageError) {
+          throw storageError;
+        }
+      }
+
+      // Remove produto
+      const { error: deleteError } = await supabase
+        .from("products")
+        .delete()
+        .eq("id", id);
+
+      if (deleteError) throw deleteError;
+
       toast.success("Produto removido!");
+
       setDeleteId(null);
+
       fetchProducts();
+
     } catch (err: any) {
-      toast.error(err.message || "Erro ao remover produto");
+      console.log(err);
+      toast.error(err.message);
     }
   };
+
+  // const handleDelete = async (id: string) => {
+  //   console.log("Deleting product:", id);
+  //   try {
+  //     const { error } = await supabase.from("products").delete().eq("id", id);
+  //     if (error) throw error;
+  //     toast.success("Produto removido!");
+  //     setDeleteId(null);
+  //     fetchProducts();
+  //   } catch (err: any) {
+  //     toast.error(err.message || "Erro ao remover produto");
+  //   }
+  // };
 
   const handlePortal = async () => {
     setPortalLoading(true);
@@ -302,7 +404,9 @@ const Dashboard = () => {
                 </CardTitle>
                 <CardDescription className="mt-1">
                   {subscription.subscribed
-                    ? `Ativo até ${new Date(subscription.subscription_end!).toLocaleDateString("pt-BR")}`
+                    ? subscription.subscription_end
+                      ? `Próxima cobrança em ${new Date(subscription.subscription_end).toLocaleDateString("pt-BR")}`
+                      : "Assinatura ativa. Toque em atualizar para carregar a data da próxima cobrança."
                     : `${products.length}/${FREE_PRODUCT_LIMIT} produtos · ${publishedCount} publicado(s)`
                   }
                 </CardDescription>
