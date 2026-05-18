@@ -31,8 +31,8 @@ const Navbar = () => {
   const links = [
     { to: "/catalog", label: "Catálogo" },
     { to: "/pricing", label: "Planos" },
-    { to: "/empresas", label: "Estabelecimentos" },
-    // { to: "/ranking", label: "Ranking" },
+    ...(user ? [{ to: "/empresas", label: "Estabelecimentos" }] : []),
+    // { to: "/empresas", label: "Estabelecimentos" },
     ...(user ? [{ to: "/dashboard", label: "Dashboard" }] : []),
     // ...(subscription.plan_tier === "enterprise" ? [{ to: "/minha-empresa", label: "Minha Empresa" }] : [{ to: "/empresas", label: "Empresas" }]),
 

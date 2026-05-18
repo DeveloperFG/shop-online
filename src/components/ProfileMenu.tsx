@@ -75,7 +75,7 @@ const ProfileMenu = () => {
                         <LayoutDashboard className="h-4 w-4 mr-2" /> Dashboard
                     </Link>
                 </DropdownMenuItem>
-                {subscription.plan_tier === "enterprise" && (
+                {user && subscription.plan_tier === "enterprise" && (
                     <DropdownMenuItem asChild>
                         <Link to="/minha-empresa" className="cursor-pointer">
                             <Building2 className="h-4 w-4 mr-2" />
