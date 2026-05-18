@@ -26,7 +26,7 @@ async function messageFromFunctionError(error: unknown): Promise<string> {
 
 const features = [
   { name: "Cadastrar produtos", free: true, premium: true, enterprise: true },
-  { name: "Limite de produtos", free: "3 produtos", premium: "Ilimitado", enterprise: "Ilimitado" },
+  { name: "Limite de produtos", free: "5 produtos", premium: "Ilimitado", enterprise: "Ilimitado" },
   { name: "Fotos dos produtos", free: true, premium: true, enterprise: true },
   { name: "Perfil público", free: true, premium: true, enterprise: true },
   { name: "Avaliações e reputação", free: true, premium: true, enterprise: true },

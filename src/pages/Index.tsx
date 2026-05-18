@@ -9,7 +9,7 @@ import BannerCarousel from "@/components/BannerCarousel";
 const features = [
   { icon: Package, title: "Gerencie Produtos", desc: "Cadastre e organize seus produtos com facilidade." },
   { icon: Shield, title: "Seguro & Confiável", desc: "Seus dados protegidos com autenticação robusta." },
-  { icon: Star, title: "Plano Premium", desc: "Desbloqueie recursos ilimitados com o plano premium." },
+  { icon: Star, title: "Plano Premium", desc: "Desbloqueie recursos ilimitados." },
 ];
 
 const Index = () => {
@@ -60,7 +60,7 @@ const Index = () => {
             Tudo que você precisa
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-center text-muted-foreground">
-            Ferramentas completas para gerenciar seus produtos em um só lugar.
+            Ferramenta completa para gerenciar e vender seus produtos.
           </p>
           <div className="mt-12 grid gap-8 sm:grid-cols-3">
             {features.map((f) => (

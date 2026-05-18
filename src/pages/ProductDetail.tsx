@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
+
+import { FaWhatsapp } from 'react-icons/fa';
+
 import {
   ArrowLeft,
   Clock,
@@ -25,6 +28,17 @@ import ChatDialog from "@/components/ChatDialog";
 
 type Product = Tables<"products">;
 type Profile = Tables<"profiles">;
+
+const WHATSAPP_DEFAULT_MESSAGE = "Olá, estou interessado no item à venda.";
+
+function buildWhatsAppUrl(phone: string, message: string): string {
+  let digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("0")) digits = digits.replace(/^0+/, "");
+  if (digits.length >= 10 && digits.length <= 11 && !digits.startsWith("55")) {
+    digits = `55${digits}`;
+  }
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
+}
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -208,9 +222,14 @@ const ProductDetail = () => {
                       </p>
                     )}
                     {seller.phone && (
-                      <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <Phone className="h-4 w-4" /> {seller.phone}
-                      </p>
+                      <a
+                        href={buildWhatsAppUrl(seller.phone, WHATSAPP_DEFAULT_MESSAGE)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-primary"
+                      >
+                        <FaWhatsapp className="h-4 w-4 shrink-0" /> {seller.phone}
+                      </a>
                     )}
                   </div>
                 </div>

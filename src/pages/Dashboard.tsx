@@ -23,7 +23,7 @@ import type { Tables } from "@/integrations/supabase/types";
 
 type Product = Tables<"products">;
 
-const FREE_PRODUCT_LIMIT = 3;
+const FREE_PRODUCT_LIMIT = 5;
 
 const Dashboard = () => {
   const { user, loading: authLoading, subscription, checkingSubscription, refreshSubscription } = useAuth();

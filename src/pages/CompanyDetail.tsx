@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { FaWhatsapp } from 'react-icons/fa';
 import { Loader2, MapPin, Star, Building2, MessageCircle, Link2, Check } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -235,8 +236,7 @@ const CompanyDetail = () => {
                                     {whatsappLink && (
                                         <a href={whatsappLink} target="_blank" rel="noopener noreferrer">
                                             <Button size="sm" className="bg-[hsl(142,70%,45%)] hover:bg-[hsl(142,70%,40%)] text-white">
-                                                <MessageCircle className="mr-2 h-4 w-4" />
-                                                Mandar mensagem no WhatsApp
+                                                <FaWhatsapp className="h-4 w-4 shrink-0" /> Mandar mensagem no WhatsApp
                                             </Button>
                                         </a>
                                     )}

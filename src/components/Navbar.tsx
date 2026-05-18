@@ -31,9 +31,10 @@ const Navbar = () => {
   const links = [
     { to: "/catalog", label: "Catálogo" },
     { to: "/pricing", label: "Planos" },
+    { to: "/empresas", label: "Estabelecimentos" },
     // { to: "/ranking", label: "Ranking" },
     ...(user ? [{ to: "/dashboard", label: "Dashboard" }] : []),
-    ...(subscription.plan_tier === "enterprise" ? [{ to: "/minha-empresa", label: "Minha Empresa" }] : [{ to: "/empresas", label: "Empresas" }]),
+    // ...(subscription.plan_tier === "enterprise" ? [{ to: "/minha-empresa", label: "Minha Empresa" }] : [{ to: "/empresas", label: "Empresas" }]),
 
   ];
 
@@ -115,6 +116,16 @@ const Navbar = () => {
               >
                 Ranking
               </button>
+
+              {user && subscription.plan_tier === "enterprise" && (
+                <Link
+                  to="/minha-empresa"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2 text-lg font-medium text-foreground"
+                >
+                  Meu Estabelecimento
+                </Link>
+              )}
 
               {user && isAdmin && (
                 <Link

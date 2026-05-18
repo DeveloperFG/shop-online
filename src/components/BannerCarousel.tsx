@@ -1,6 +1,4 @@
-// teste
-
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import useEmblaCarousel from "embla-carousel-react";
 
@@ -45,7 +43,7 @@ const BannerCarousel = () => {
                         <img
                             src={b.image_url}
                             alt={b.title || "Banner"}
-                            className="w-full object-cover aspect-[3/1.2] md:aspect-[3/1]"
+                            className="w-full object-contain aspect-[3/1.2] md:aspect-[3/1]"
                         />
                     </div>
                 ))}
