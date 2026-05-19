@@ -7,7 +7,6 @@ const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!);
 const endpointSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET")!;
 
 
-/** Stripe às vezes envia subscription como string id ou objeto expandido. */
 function subscriptionIdFromField(
   raw: string | Stripe.Subscription | null | undefined
 ): string | null {
