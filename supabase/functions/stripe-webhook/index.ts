@@ -240,6 +240,9 @@ serve(async (req) => {
 
         const subscriptionId = subscription.id;
 
+        const productId =
+        productIdFromStripeSubscription(subscription);
+
         const subscriptionEnd =
           getSubscriptionPeriodEnd(subscription);
 
@@ -252,6 +255,8 @@ serve(async (req) => {
           .update({
             is_active: active,
 
+            stripe_product_id: productId,
+            
             subscription_end: subscriptionEnd,
 
             cancel_at_period_end:
