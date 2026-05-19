@@ -29,58 +29,124 @@ const ResetPassword = () => {
   useEffect(() => {
     const handleRecovery = async () => {
       try {
-        console.log("URL:", window.location.href);
-        console.log("HASH:", window.location.hash);
+        /**
+         * O cliente Supabase (detectSessionInUrl: true) processa o hash ou ?code=
+         * durante a inicialização; getSession() aguarda isso antes de devolver dados.
+         * O AuthProvider segura as rotas com loading inicial, então este componente
+         * costuma montar depois do URL já estar limpo — não dá para depender só do
+         * fragment.
+         */
+        const firstSessionTry =
+          await supabase.auth.getSession();
 
-        const hash = window.location.hash;
+        if (firstSessionTry.data.session) {
+          setReady(true);
 
-        if (!hash) {
+          const hasAuthParams =
+            Boolean(
+              window.location.hash
+            ) ||
+            window.location.search.includes(
+              "code="
+            );
+
+          if (
+            hasAuthParams
+          ) {
+            window.history.replaceState(
+              {},
+              "",
+              window.location.pathname
+            );
+          }
+
           setChecking(false);
           return;
         }
 
-        const params = new URLSearchParams(
-          hash.substring(1)
-        );
+        const hash =
+          window.location.hash;
 
-        const access_token = params.get("access_token");
-        const refresh_token = params.get("refresh_token");
-        const type = params.get("type");
+        if (hash) {
+          const hashParams =
+            new URLSearchParams(hash.substring(1));
 
-        console.log({
-          access_token,
-          refresh_token,
-          type,
-        });
-
-        if (
-          type === "recovery" &&
-          access_token &&
-          refresh_token
-        ) {
-          const { error } = await supabase.auth.setSession({
-            access_token,
-            refresh_token,
-          });
-
-          if (error) {
-            console.error(
-              "Erro ao restaurar sessão:",
-              error
+          const access_token =
+            hashParams.get(
+              "access_token"
             );
+          const refresh_token =
+            hashParams.get(
+              "refresh_token"
+            );
+          const type =
+            hashParams.get("type");
 
-            toast.error("Link inválido ou expirado");
+          if (
+            type === "recovery" &&
+            access_token &&
+            refresh_token
+          ) {
+            const { error } =
+              await supabase.auth.setSession({
+                access_token,
+                refresh_token,
+              });
+
+            if (error) {
+              console.error(
+                "Erro ao restaurar sessão:",
+                error
+              );
+              toast.error(
+                "Link inválido ou expirado"
+              );
+
+              setChecking(false);
+              return;
+            }
+
+            setReady(true);
             setChecking(false);
             return;
           }
+        }
 
-          setReady(true);
+        const pkceCode =
+          new URLSearchParams(
+            window.location.search
+          ).get("code");
+
+        if (pkceCode) {
+          const { error } =
+            await supabase.auth.exchangeCodeForSession(
+              pkceCode
+            );
+
+          if (error) {
+            console.error(
+              "Erro ao trocar código PKCE:",
+              error
+            );
+            toast.error(
+              "Link inválido ou expirado"
+            );
+          } else {
+            setReady(true);
+            window.history.replaceState(
+              {},
+              "",
+              window.location.pathname
+            );
+          }
         }
 
         setChecking(false);
       } catch (err) {
         console.error(err);
-        toast.error("Erro ao validar link");
+        toast.error(
+          "Erro ao validar link"
+        );
         setChecking(false);
       }
     };
