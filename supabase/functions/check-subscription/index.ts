@@ -101,6 +101,7 @@ serve(async (req) => {
           subscribed: false,
           product_id: null,
           subscription_end: null,
+          cancel_at_period_end: false,
           plan_tier: "free",
         }),
         {
@@ -129,11 +130,13 @@ serve(async (req) => {
 
     let productId: string | null = null;
     let subscriptionEnd: string | null = null;
+    let cancelAtPeriodEnd = false;
     let planTier: "free" | "premium" | "enterprise" = "free";
 
     if (hasActiveSub && subscription) {
 
       const stripeSubId = subscription.id;
+      cancelAtPeriodEnd = Boolean(subscription.cancel_at_period_end);
 
       logStep("Stripe subscription", subscription);
 
@@ -198,6 +201,7 @@ serve(async (req) => {
         stripe_product_id: productId,
         is_active: true,
         subscription_end: subscriptionEnd,
+        cancel_at_period_end: cancelAtPeriodEnd,
         updated_at: new Date().toISOString(),
       };
 
@@ -232,6 +236,7 @@ serve(async (req) => {
         subscribed: hasActiveSub,
         product_id: productId,
         subscription_end: subscriptionEnd,
+        cancel_at_period_end: hasActiveSub ? cancelAtPeriodEnd : false,
         plan_tier: hasActiveSub ? planTier : "free",
       }),
       {

@@ -7,6 +7,8 @@ interface SubscriptionInfo {
   subscribed: boolean;
   product_id: string | null;
   subscription_end: string | null;
+  /** Assinatura ativa mas agendada para não renovar (Stripe cancel_at_period_end). */
+  cancel_at_period_end: boolean;
   plan_tier: "free" | "premium" | "enterprise";
 }
 
@@ -26,6 +28,7 @@ const AuthContext = createContext<AuthContextType>({
     subscribed: false,
     product_id: null,
     subscription_end: null,
+    cancel_at_period_end: false,
     plan_tier: "free",
   },
   checkingSubscription: false,
@@ -87,6 +90,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     subscribed: false,
     product_id: null,
     subscription_end: null,
+    cancel_at_period_end: false,
     plan_tier: "free",
   });
 
@@ -148,6 +152,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           subscribed: data.subscribed ?? false,
           product_id: data.product_id ?? null,
           subscription_end: data.subscription_end ?? null,
+          cancel_at_period_end: Boolean(data.cancel_at_period_end),
           plan_tier: resolvedPlan,
         });
       }
@@ -194,6 +199,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           subscribed: false,
           product_id: null,
           subscription_end: null,
+          cancel_at_period_end: false,
           plan_tier: "free",
         });
 
@@ -220,6 +226,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       subscribed: false,
       product_id: null,
       subscription_end: null,
+      cancel_at_period_end: false,
       plan_tier: "free",
     });
   };

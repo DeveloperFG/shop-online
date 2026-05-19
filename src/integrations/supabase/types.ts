@@ -260,6 +260,7 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          cancel_at_period_end: boolean | null
           created_at: string
           id: string
           is_active: boolean | null
@@ -271,6 +272,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cancel_at_period_end?: boolean | null
           created_at?: string
           id?: string
           is_active?: boolean | null
@@ -282,18 +284,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cancel_at_period_end?: boolean | null
           created_at?: string
-          id?: string
-          is_active?: boolean | null
-          stripe_customer_id?: string | null
-          stripe_product_id?: string | null
-          stripe_subscription_id?: string | null
-          subscription_end?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never

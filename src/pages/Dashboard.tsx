@@ -53,6 +53,9 @@ const Dashboard = () => {
   const TERMS_VERSION = "v1.0";
 
 
+
+  console.log("subscription:", subscription);
+
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
@@ -405,7 +408,9 @@ const Dashboard = () => {
                 <CardDescription className="mt-1">
                   {subscription.subscribed
                     ? subscription.subscription_end
-                      ? `Próxima cobrança em ${new Date(subscription.subscription_end).toLocaleDateString("pt-BR")}`
+                      ? subscription.cancel_at_period_end
+                        ? `Sua assinatura será cancelada em ${new Date(subscription.subscription_end).toLocaleDateString("pt-BR")}`
+                        : `Próxima cobrança em ${new Date(subscription.subscription_end).toLocaleDateString("pt-BR")}`
                       : "Assinatura ativa. Toque em atualizar para carregar a data da próxima cobrança."
                     : `${products.length}/${FREE_PRODUCT_LIMIT} produtos · ${publishedCount} publicado(s)`
                   }
