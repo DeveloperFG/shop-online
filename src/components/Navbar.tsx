@@ -31,7 +31,7 @@ const Navbar = () => {
   const links = [
     { to: "/catalog", label: "Catálogo" },
     { to: "/pricing", label: "Planos" },
-    ...(user ? [{ to: "/empresas", label: "Estabelecimentos" }] : []),
+    ...(user ? [{ to: "/empresas", label: "Empresas" }] : []),
     // { to: "/empresas", label: "Estabelecimentos" },
     ...(user ? [{ to: "/dashboard", label: "Dashboard" }] : []),
     // ...(subscription.plan_tier === "enterprise" ? [{ to: "/minha-empresa", label: "Minha Empresa" }] : [{ to: "/empresas", label: "Empresas" }]),
@@ -123,7 +123,7 @@ const Navbar = () => {
                   onClick={() => setOpen(false)}
                   className="flex items-center gap-2 text-lg font-medium text-foreground"
                 >
-                  Meu Estabelecimento
+                  Minha Empresa
                 </Link>
               )}
 

@@ -238,18 +238,26 @@ serve(async (req) => {
       // 🔄 ATUALIZAÇÃO
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
+
         const subscriptionId = subscription.id;
 
-        const subscriptionEnd = getSubscriptionPeriodEnd(subscription);
+        const subscriptionEnd =
+          getSubscriptionPeriodEnd(subscription);
 
         const active =
-          subscription.status === "active" || subscription.status === "trialing";
+          subscription.status === "active" ||
+          subscription.status === "trialing";
 
         await supabase
           .from("subscriptions")
           .update({
             is_active: active,
+
             subscription_end: subscriptionEnd,
+
+            cancel_at_period_end:
+              subscription.cancel_at_period_end,
+
             updated_at: new Date().toISOString(),
           })
           .eq("stripe_subscription_id", subscriptionId);

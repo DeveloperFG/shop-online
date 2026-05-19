@@ -43,8 +43,8 @@ const Companies = () => {
         <div className="min-h-screen bg-background">
             <Navbar />
             <div className="mx-auto max-w-6xl px-4 pt-24 pb-16">
-                <h1 className="font-serif text-3xl font-bold text-foreground mb-2">Estabelecimentos</h1>
-                <p className="text-muted-foreground mb-8">Conheça os estabelecimentos da nossa plataforma</p>
+                <h1 className="font-serif text-3xl font-bold text-foreground mb-2">Empresas</h1>
+                <p className="text-muted-foreground mb-8">Empresas cadastradas na nossa plataforma</p>
 
                 {fetching ? (
                     <div className="flex justify-center py-16">
