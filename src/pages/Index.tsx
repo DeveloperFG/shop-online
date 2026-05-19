@@ -19,8 +19,9 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Banner Carousel */}
-      <div className=" -mb-20">
+      <main className="pt-16">
+      {/* Banner Carousel — pt-16 clears fixed Navbar (h-16) */}
+      <div className="-mb-20">
         <BannerCarousel />
       </div>
 
@@ -99,6 +100,7 @@ const Index = () => {
           </div> */}
         </div>
       </footer>
+      </main>
     </div>
   );
 };

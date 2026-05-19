@@ -150,7 +150,7 @@ const UserRankingModal = ({ onClose }: { onClose: () => void }) => {
                                 </svg>
                             </div>
                             <div>
-                                <h2 className="text-base font-bold tracking-tight">Ranking de Usuários</h2>
+                                <h2 className="text-base font-bold tracking-tight">Ranking de vendedores</h2>
                                 {/* <p className="text-blue-100 text-xs mt-0.5">Classificado por avaliações e nota média</p> */}
                             </div>
                         </div>
@@ -211,7 +211,7 @@ const UserRankingModal = ({ onClose }: { onClose: () => void }) => {
                                         d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
                             </div>
-                            <p className="text-sm text-gray-400">Nenhum usuário avaliado ainda.</p>
+                            <p className="text-sm text-gray-400">Nenhuma avaliação ainda.</p>
                         </div>
                     ) : (
                         <ul className="divide-y divide-gray-50 px-4 py-3 space-y-2">
