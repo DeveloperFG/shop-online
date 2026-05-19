@@ -98,7 +98,7 @@ serve(async (req) => {
   let event;
 
   try {
-    event = stripe.webhooks.constructEventAsync(body, signature, endpointSecret);
+    event = await stripe.webhooks.constructEventAsync(body, signature, endpointSecret);
   } catch (err) {
     console.error("Webhook signature error:", err.message);
     return new Response(`Webhook Error: ${err.message}`, { status: 400 });
