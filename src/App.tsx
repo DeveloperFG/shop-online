@@ -20,6 +20,7 @@ import Banned from "./pages/Banned";
 import Companies from "./pages/Companies";
 import CompanyDetail from "./pages/CompanyDetail";
 import MyCompany from "./pages/MyCompany";
+import Sorteios from "./pages/Sorteios";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/empresas" element={<Companies />} />
               <Route path="/empresa/:id" element={<CompanyDetail />} />
               <Route path="/minha-empresa" element={<MyCompany />} />
+              <Route path="/sorteios" element={<Sorteios />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

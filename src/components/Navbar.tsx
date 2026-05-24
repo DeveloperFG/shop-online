@@ -40,6 +40,7 @@ const Navbar = () => {
   const [catalogLoginModalOpen, setCatalogLoginModalOpen] = useState(false);
 
   const links = [
+    { to: "/sorteios", label: "Sorteios" },
     { to: "/catalog", label: "Catálogo", requiresAuth: true as const },
     // { to: "/pricing", label: "Planos" },
     ...(user ? [{ to: "/empresas", label: "Empresas" }] : []),

@@ -20,7 +20,9 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Ban, Upload, Trash2, Loader2 } from "lucide-react";
+import { Shield, Ban, Upload, Trash2, Loader2, Gift, Pencil } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { isSorteioEncerrado, type Sorteio } from "@/lib/sorteios";
 
 interface Profile {
     user_id: string;
@@ -61,6 +63,27 @@ const Admin = () => {
     const [bannerModalOpen, setBannerModalOpen] = useState(false);
     const [newBannerLink, setNewBannerLink] = useState("");
     const [pendingBannerFile, setPendingBannerFile] = useState<File | null>(null);
+    const [sorteios, setSorteios] = useState<Sorteio[]>([]);
+    const [savingSorteio, setSavingSorteio] = useState(false);
+    const [pendingSorteioImage, setPendingSorteioImage] = useState<File | null>(null);
+    const [deletingSorteioId, setDeletingSorteioId] = useState<string | null>(null);
+    const [sorteioForm, setSorteioForm] = useState({
+        name: "",
+        sponsor_name: "",
+        validity_period: "",
+        start_date: "",
+        end_date: "",
+    });
+    const [sorteioEditModalOpen, setSorteioEditModalOpen] = useState(false);
+    const [editingSorteio, setEditingSorteio] = useState<Sorteio | null>(null);
+    const [editSorteioForm, setEditSorteioForm] = useState({
+        name: "",
+        sponsor_name: "",
+        validity_period: "",
+        start_date: "",
+        end_date: "",
+    });
+    const [pendingSorteioEditImage, setPendingSorteioEditImage] = useState<File | null>(null);
 
     useEffect(() => {
         if (!authLoading && !adminLoading) {
@@ -78,14 +101,16 @@ const Admin = () => {
 
     const fetchData = async () => {
         setLoadingData(true);
-        const [profilesRes, bannedRes, bannersRes] = await Promise.all([
+        const [profilesRes, bannedRes, bannersRes, sorteiosRes] = await Promise.all([
             supabase.from("profiles").select("user_id, name, email, avatar_url, created_at").order("created_at", { ascending: false }),
             supabase.from("banned_users").select("*"),
             supabase.from("banners").select("*").order("display_order"),
+            supabase.from("sorteios").select("*").order("created_at", { ascending: false }),
         ]);
         if (profilesRes.data) setProfiles(profilesRes.data);
         if (bannedRes.data) setBannedUsers(bannedRes.data);
         if (bannersRes.data) setBanners(bannersRes.data);
+        if (sorteiosRes.data) setSorteios(sorteiosRes.data as Sorteio[]);
         setLoadingData(false);
     };
 
@@ -179,6 +204,219 @@ const Admin = () => {
         setUploading(false);
     };
 
+    const resetSorteioForm = () => {
+        setSorteioForm({
+            name: "",
+            sponsor_name: "",
+            validity_period: "",
+            start_date: "",
+            end_date: "",
+        });
+        setPendingSorteioImage(null);
+    };
+
+    const handlePickSorteioImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) {
+            setPendingSorteioImage(null);
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            toast({ title: "Imagem muito grande (máx 5MB)", variant: "destructive" });
+            e.target.value = "";
+            return;
+        }
+        setPendingSorteioImage(file);
+    };
+
+    const uploadSorteioImage = async (file: File): Promise<string | null> => {
+        const ext = file.name.split(".").pop();
+        const path = `${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage.from("sorteios").upload(path, file);
+        if (uploadError) {
+            toast({ title: "Erro no upload da imagem", description: uploadError.message, variant: "destructive" });
+            return null;
+        }
+        const { data: urlData } = supabase.storage.from("sorteios").getPublicUrl(path);
+        return urlData.publicUrl;
+    };
+
+    const removeSorteioImageFromStorage = async (imageUrl: string | null) => {
+        if (!imageUrl) return;
+        const fileName = imageUrl.split("/").pop();
+        if (fileName) {
+            await supabase.storage.from("sorteios").remove([fileName]);
+        }
+    };
+
+    const handleCreateSorteio = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const { name, sponsor_name, validity_period, start_date, end_date } = sorteioForm;
+        if (!name.trim() || !sponsor_name.trim() || !validity_period.trim() || !start_date || !end_date) {
+            toast({ title: "Preencha todos os campos do sorteio", variant: "destructive" });
+            return;
+        }
+        if (!pendingSorteioImage) {
+            toast({ title: "Selecione uma imagem para o sorteio", variant: "destructive" });
+            return;
+        }
+        if (new Date(end_date) < new Date(start_date)) {
+            toast({ title: "A data final deve ser igual ou posterior à data de início", variant: "destructive" });
+            return;
+        }
+        setSavingSorteio(true);
+        const imageUrl = await uploadSorteioImage(pendingSorteioImage);
+        if (!imageUrl) {
+            setSavingSorteio(false);
+            return;
+        }
+        const { error } = await supabase.from("sorteios").insert({
+            name: name.trim(),
+            sponsor_name: sponsor_name.trim(),
+            validity_period: validity_period.trim(),
+            start_date: new Date(start_date).toISOString(),
+            end_date: new Date(end_date).toISOString(),
+            image_url: imageUrl,
+            created_by: user!.id,
+        });
+        if (error) {
+            await removeSorteioImageFromStorage(imageUrl);
+            toast({ title: "Erro ao cadastrar sorteio", description: error.message, variant: "destructive" });
+        } else {
+            toast({ title: "Sorteio cadastrado com sucesso!" });
+            resetSorteioForm();
+            fetchData();
+        }
+        setSavingSorteio(false);
+    };
+
+    const handleDeleteSorteio = async (sorteio: Sorteio) => {
+        setDeletingSorteioId(sorteio.id);
+        await removeSorteioImageFromStorage(sorteio.image_url);
+        const { error } = await supabase.from("sorteios").delete().eq("id", sorteio.id);
+        if (error) {
+            toast({ title: "Erro ao remover sorteio", variant: "destructive" });
+        } else {
+            toast({ title: "Sorteio removido" });
+            fetchData();
+        }
+        setDeletingSorteioId(null);
+    };
+
+    const formatSorteioDateTime = (value: string) =>
+        new Date(value).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+
+    const toDatetimeLocalValue = (iso: string) => {
+        const d = new Date(iso);
+        const pad = (n: number) => String(n).padStart(2, "0");
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
+
+    const resetSorteioEditModal = () => {
+        setEditingSorteio(null);
+        setEditSorteioForm({
+            name: "",
+            sponsor_name: "",
+            validity_period: "",
+            start_date: "",
+            end_date: "",
+        });
+        setPendingSorteioEditImage(null);
+    };
+
+    const handleSorteioEditModalChange = (open: boolean) => {
+        setSorteioEditModalOpen(open);
+        if (!open) resetSorteioEditModal();
+    };
+
+    const handleOpenEditSorteio = (sorteio: Sorteio) => {
+        setEditingSorteio(sorteio);
+        setEditSorteioForm({
+            name: sorteio.name,
+            sponsor_name: sorteio.sponsor_name,
+            validity_period: sorteio.validity_period,
+            start_date: toDatetimeLocalValue(sorteio.start_date),
+            end_date: toDatetimeLocalValue(sorteio.end_date),
+        });
+        setPendingSorteioEditImage(null);
+        setSorteioEditModalOpen(true);
+    };
+
+    const handlePickSorteioEditImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) {
+            setPendingSorteioEditImage(null);
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            toast({ title: "Imagem muito grande (máx 5MB)", variant: "destructive" });
+            e.target.value = "";
+            return;
+        }
+        setPendingSorteioEditImage(file);
+    };
+
+    const handleUpdateSorteio = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingSorteio) return;
+
+        const { name, sponsor_name, validity_period, start_date, end_date } = editSorteioForm;
+        if (!name.trim() || !sponsor_name.trim() || !validity_period.trim() || !start_date || !end_date) {
+            toast({ title: "Preencha todos os campos do sorteio", variant: "destructive" });
+            return;
+        }
+        if (new Date(end_date) < new Date(start_date)) {
+            toast({ title: "A data final deve ser igual ou posterior à data de início", variant: "destructive" });
+            return;
+        }
+
+        setSavingSorteio(true);
+        let imageUrl = editingSorteio.image_url;
+        const previousImageUrl = editingSorteio.image_url;
+
+        if (pendingSorteioEditImage) {
+            const uploadedUrl = await uploadSorteioImage(pendingSorteioEditImage);
+            if (!uploadedUrl) {
+                setSavingSorteio(false);
+                return;
+            }
+            imageUrl = uploadedUrl;
+        }
+
+        if (!imageUrl) {
+            toast({ title: "O sorteio precisa de uma imagem", variant: "destructive" });
+            setSavingSorteio(false);
+            return;
+        }
+
+        const { error } = await supabase
+            .from("sorteios")
+            .update({
+                name: name.trim(),
+                sponsor_name: sponsor_name.trim(),
+                validity_period: validity_period.trim(),
+                start_date: new Date(start_date).toISOString(),
+                end_date: new Date(end_date).toISOString(),
+                image_url: imageUrl,
+            })
+            .eq("id", editingSorteio.id);
+
+        if (error) {
+            if (imageUrl !== previousImageUrl) {
+                await removeSorteioImageFromStorage(imageUrl);
+            }
+            toast({ title: "Erro ao atualizar sorteio", description: error.message, variant: "destructive" });
+        } else {
+            if (imageUrl !== previousImageUrl) {
+                await removeSorteioImageFromStorage(previousImageUrl);
+            }
+            toast({ title: "Sorteio atualizado com sucesso!" });
+            handleSorteioEditModalChange(false);
+            fetchData();
+        }
+        setSavingSorteio(false);
+    };
+
     const handleDeleteBanner = async (banner: Banner) => {
         const fileName = banner.image_url.split("/").pop();
         if (fileName) {
@@ -216,6 +454,7 @@ const Admin = () => {
                     <TabsList className="mb-6">
                         <TabsTrigger value="users">Usuários</TabsTrigger>
                         <TabsTrigger value="banners">Banners</TabsTrigger>
+                        <TabsTrigger value="sorteios">Sorteios</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="users">
@@ -372,6 +611,291 @@ const Admin = () => {
                                 )}
                             </CardContent>
                         </Card>
+                    </TabsContent>
+
+                    <TabsContent value="sorteios">
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Gift className="h-5 w-5 text-primary" />
+                                        Cadastrar sorteio
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <form onSubmit={handleCreateSorteio} className="grid gap-4">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="sorteio-name">Nome do sorteio</Label>
+                                            <Input
+                                                id="sorteio-name"
+                                                value={sorteioForm.name}
+                                                onChange={(e) => setSorteioForm((f) => ({ ...f, name: e.target.value }))}
+                                                disabled={savingSorteio}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="sorteio-image">Imagem do sorteio</Label>
+                                            <Input
+                                                id="sorteio-image"
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handlePickSorteioImage}
+                                                disabled={savingSorteio}
+                                                required
+                                            />
+                                            {pendingSorteioImage ? (
+                                                <p className="text-sm text-muted-foreground">{pendingSorteioImage.name}</p>
+                                            ) : (
+                                                <p className="text-sm text-muted-foreground">Nenhum arquivo selecionado.</p>
+                                            )}
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="sorteio-sponsor">Nome do patrocinador</Label>
+                                            <Input
+                                                id="sorteio-sponsor"
+                                                value={sorteioForm.sponsor_name}
+                                                onChange={(e) => setSorteioForm((f) => ({ ...f, sponsor_name: e.target.value }))}
+                                                disabled={savingSorteio}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="sorteio-validity">Período de vigência</Label>
+                                            <Textarea
+                                                id="sorteio-validity"
+                                                placeholder="Ex.: De 01/06/2026 a 30/06/2026"
+                                                value={sorteioForm.validity_period}
+                                                onChange={(e) => setSorteioForm((f) => ({ ...f, validity_period: e.target.value }))}
+                                                disabled={savingSorteio}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="grid gap-2 sm:grid-cols-2">
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="sorteio-start">Data de início</Label>
+                                                <Input
+                                                    id="sorteio-start"
+                                                    type="datetime-local"
+                                                    value={sorteioForm.start_date}
+                                                    onChange={(e) => setSorteioForm((f) => ({ ...f, start_date: e.target.value }))}
+                                                    disabled={savingSorteio}
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="sorteio-end">Data de final</Label>
+                                                <Input
+                                                    id="sorteio-end"
+                                                    type="datetime-local"
+                                                    value={sorteioForm.end_date}
+                                                    onChange={(e) => setSorteioForm((f) => ({ ...f, end_date: e.target.value }))}
+                                                    disabled={savingSorteio}
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+                                        <p className="text-sm text-muted-foreground">
+                                            Data e hora do cadastro serão registradas automaticamente ao salvar.
+                                        </p>
+                                        <Button type="submit" disabled={savingSorteio}>
+                                            {savingSorteio ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando...
+                                                </>
+                                            ) : (
+                                                "Cadastrar sorteio"
+                                            )}
+                                        </Button>
+                                    </form>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Sorteios cadastrados ({sorteios.length})</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    {loadingData ? (
+                                        <div className="flex justify-center py-8">
+                                            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                                        </div>
+                                    ) : sorteios.length === 0 ? (
+                                        <p className="py-8 text-center text-muted-foreground">Nenhum sorteio cadastrado.</p>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            {sorteios.map((s) => (
+                                                <div key={s.id} className="overflow-hidden rounded-lg border border-border">
+                                                    {s.image_url && (
+                                                        <img
+                                                            src={s.image_url}
+                                                            alt={s.name}
+                                                            className="aspect-[16/9] w-full object-cover"
+                                                        />
+                                                    )}
+                                                    <div className="p-4">
+                                                    <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
+                                                        <div>
+                                                            <p className="font-semibold text-foreground">{s.name}</p>
+                                                            <p className="text-sm text-muted-foreground">Patrocinador: {s.sponsor_name}</p>
+                                                        </div>
+                                                        <Badge variant={isSorteioEncerrado(s) ? "secondary" : "default"}>
+                                                            {isSorteioEncerrado(s) ? "Encerrado" : "Em andamento"}
+                                                        </Badge>
+                                                    </div>
+                                                    <div className="space-y-1 text-sm text-muted-foreground">
+                                                        <p>Vigência: {s.validity_period}</p>
+                                                        <p>Início: {formatSorteioDateTime(s.start_date)}</p>
+                                                        <p>Término: {formatSorteioDateTime(s.end_date)}</p>
+                                                        <p>Cadastrado em: {formatSorteioDateTime(s.created_at)}</p>
+                                                    </div>
+                                                    <div className="mt-3 flex justify-end gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            disabled={deletingSorteioId === s.id || savingSorteio}
+                                                            onClick={() => handleOpenEditSorteio(s)}
+                                                        >
+                                                            <Pencil className="mr-1 h-4 w-4" /> Editar
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="destructive"
+                                                            disabled={deletingSorteioId === s.id || savingSorteio}
+                                                            onClick={() => handleDeleteSorteio(s)}
+                                                        >
+                                                            {deletingSorteioId === s.id ? (
+                                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                            ) : (
+                                                                <>
+                                                                    <Trash2 className="mr-1 h-4 w-4" /> Remover
+                                                                </>
+                                                            )}
+                                                        </Button>
+                                                    </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        <Dialog open={sorteioEditModalOpen} onOpenChange={handleSorteioEditModalChange}>
+                            <DialogContent className="flex max-h-[80vh] w-[calc(100%-2rem)] max-w-md flex-col gap-0 overflow-hidden p-0 sm:max-w-md">
+                                <DialogHeader className="shrink-0 px-6 pt-6 pb-2 pr-12">
+                                    <DialogTitle>Editar sorteio</DialogTitle>
+                                    <DialogDescription>
+                                        Atualize os dados do sorteio. A data de cadastro não é alterada.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <form onSubmit={handleUpdateSorteio} className="flex min-h-0 flex-1 flex-col">
+                                    <div className="grid flex-1 gap-4 overflow-y-auto px-6 py-2">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="edit-sorteio-name">Nome do sorteio</Label>
+                                        <Input
+                                            id="edit-sorteio-name"
+                                            value={editSorteioForm.name}
+                                            onChange={(e) => setEditSorteioForm((f) => ({ ...f, name: e.target.value }))}
+                                            disabled={savingSorteio}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="edit-sorteio-image">Imagem do sorteio</Label>
+                                        {editingSorteio?.image_url && !pendingSorteioEditImage && (
+                                            <img
+                                                src={editingSorteio.image_url}
+                                                alt={editingSorteio.name}
+                                                className="max-h-28 w-full rounded-md border border-border object-cover"
+                                            />
+                                        )}
+                                        <Input
+                                            id="edit-sorteio-image"
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handlePickSorteioEditImage}
+                                            disabled={savingSorteio}
+                                        />
+                                        <p className="text-sm text-muted-foreground">
+                                            {pendingSorteioEditImage
+                                                ? `Nova imagem: ${pendingSorteioEditImage.name}`
+                                                : "Deixe em branco para manter a imagem atual."}
+                                        </p>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="edit-sorteio-sponsor">Nome do patrocinador</Label>
+                                        <Input
+                                            id="edit-sorteio-sponsor"
+                                            value={editSorteioForm.sponsor_name}
+                                            onChange={(e) => setEditSorteioForm((f) => ({ ...f, sponsor_name: e.target.value }))}
+                                            disabled={savingSorteio}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="edit-sorteio-validity">Período de vigência</Label>
+                                        <Textarea
+                                            id="edit-sorteio-validity"
+                                            value={editSorteioForm.validity_period}
+                                            onChange={(e) => setEditSorteioForm((f) => ({ ...f, validity_period: e.target.value }))}
+                                            disabled={savingSorteio}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="grid gap-2 sm:grid-cols-2">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="edit-sorteio-start">Data de início</Label>
+                                            <Input
+                                                id="edit-sorteio-start"
+                                                type="datetime-local"
+                                                value={editSorteioForm.start_date}
+                                                onChange={(e) => setEditSorteioForm((f) => ({ ...f, start_date: e.target.value }))}
+                                                disabled={savingSorteio}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="edit-sorteio-end">Data de final</Label>
+                                            <Input
+                                                id="edit-sorteio-end"
+                                                type="datetime-local"
+                                                value={editSorteioForm.end_date}
+                                                onChange={(e) => setEditSorteioForm((f) => ({ ...f, end_date: e.target.value }))}
+                                                disabled={savingSorteio}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    {editingSorteio && (
+                                        <p className="text-sm text-muted-foreground">
+                                            Cadastrado em: {formatSorteioDateTime(editingSorteio.created_at)}
+                                        </p>
+                                    )}
+                                    </div>
+                                    <DialogFooter className="shrink-0 gap-2 border-t bg-background px-6 py-4">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => handleSorteioEditModalChange(false)}
+                                            disabled={savingSorteio}
+                                        >
+                                            Cancelar
+                                        </Button>
+                                        <Button type="submit" disabled={savingSorteio}>
+                                            {savingSorteio ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando...
+                                                </>
+                                            ) : (
+                                                "Salvar alterações"
+                                            )}
+                                        </Button>
+                                    </DialogFooter>
+                                </form>
+                            </DialogContent>
+                        </Dialog>
                     </TabsContent>
                 </Tabs>
             </div>

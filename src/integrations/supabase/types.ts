@@ -223,6 +223,42 @@ export type Database = {
         }
         Relationships: []
       }
+      sorteios: {
+        Row: {
+          created_at: string
+          created_by: string
+          end_date: string
+          id: string
+          image_url: string | null
+          name: string
+          sponsor_name: string
+          start_date: string
+          validity_period: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          end_date: string
+          id?: string
+          image_url?: string | null
+          name: string
+          sponsor_name: string
+          start_date: string
+          validity_period: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          end_date?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          sponsor_name?: string
+          start_date?: string
+          validity_period?: string
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           comment: string | null
