@@ -31,7 +31,7 @@ const features = [
   { name: "Perfil público", free: true, premium: true, enterprise: true },
   { name: "Avaliações e reputação", free: true, premium: true, enterprise: true },
   { name: "Suporte prioritário por e-mail", free: false, premium: true, enterprise: true },
-  { name: "Cadastre sua empresa e produtos", free: false, premium: false, enterprise: true },
+  { name: "Cadastre empresas e produtos (várias empresas no Enterprise)", free: false, premium: false, enterprise: true },
 ];
 
 const Pricing = () => {

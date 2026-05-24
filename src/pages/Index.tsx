@@ -11,7 +11,7 @@ import BannerCarousel from "@/components/BannerCarousel";
 const features = [
   { icon: Package, title: "Gerencie Produtos", desc: "Cadastre e organize seus produtos com facilidade." },
   { icon: Shield, title: "Seguro & Confiável", desc: "Seus dados protegidos com autenticação robusta." },
-  { icon: Star, title: "Plano Premium", desc: "Desbloqueie recursos ilimitados." },
+  // { icon: Star, title: "Plano Premium", desc: "Desbloqueie recursos ilimitados." },
 ];
 
 const Index = () => {

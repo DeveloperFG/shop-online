@@ -10,6 +10,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Shield, Ban, Upload, Trash2, Loader2 } from "lucide-react";
 
@@ -32,8 +41,9 @@ interface Banner {
     id: string;
     image_url: string;
     title: string | null;
-    active: boolean;
+    is_active: boolean;
     display_order: number;
+    link: string | null;
 }
 
 const Admin = () => {
@@ -48,6 +58,9 @@ const Admin = () => {
     const [loadingData, setLoadingData] = useState(true);
     const [banningId, setBanningId] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
+    const [bannerModalOpen, setBannerModalOpen] = useState(false);
+    const [newBannerLink, setNewBannerLink] = useState("");
+    const [pendingBannerFile, setPendingBannerFile] = useState<File | null>(null);
 
     useEffect(() => {
         if (!authLoading && !adminLoading) {
@@ -109,11 +122,34 @@ const Admin = () => {
         setBanningId(null);
     };
 
-    const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const resetBannerModal = () => {
+        setNewBannerLink("");
+        setPendingBannerFile(null);
+    };
+
+    const handleBannerModalChange = (open: boolean) => {
+        setBannerModalOpen(open);
+        if (!open) resetBannerModal();
+    };
+
+    const handlePickBannerFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file) return;
+        if (!file) {
+            setPendingBannerFile(null);
+            return;
+        }
         if (file.size > 5 * 1024 * 1024) {
             toast({ title: "Imagem muito grande (máx 5MB)", variant: "destructive" });
+            e.target.value = "";
+            return;
+        }
+        setPendingBannerFile(file);
+    };
+
+    const handleSubmitBanner = async () => {
+        const file = pendingBannerFile;
+        if (!file) {
+            toast({ title: "Selecione uma imagem", variant: "destructive" });
             return;
         }
         setUploading(true);
@@ -126,15 +162,18 @@ const Admin = () => {
             return;
         }
         const { data: urlData } = supabase.storage.from("banners").getPublicUrl(path);
+        const linkTrimmed = newBannerLink.trim();
         const { error: insertError } = await supabase.from("banners").insert({
             image_url: urlData.publicUrl,
             title: file.name,
             display_order: banners.length,
+            link: linkTrimmed.length > 0 ? linkTrimmed : null,
         });
         if (insertError) {
             toast({ title: "Erro ao salvar banner", variant: "destructive" });
         } else {
             toast({ title: "Banner adicionado!" });
+            handleBannerModalChange(false);
             fetchData();
         }
         setUploading(false);
@@ -250,20 +289,60 @@ const Admin = () => {
                             <CardHeader className="flex flex-row items-center justify-between">
                                 <CardTitle>Banners do Carrossel</CardTitle>
                                 <div>
-                                    <Input
-                                        type="file"
-                                        accept="image/*"
-                                        className="hidden"
-                                        id="banner-upload"
-                                        onChange={handleBannerUpload}
-                                        disabled={uploading}
-                                    />
-                                    <Button asChild disabled={uploading}>
-                                        <label htmlFor="banner-upload" className="cursor-pointer">
-                                            {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                                            {uploading ? "Enviando..." : "Adicionar Banner"}
-                                        </label>
+                                    <Button type="button" onClick={() => setBannerModalOpen(true)} disabled={uploading}>
+                                        {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                                        Adicionar Banner
                                     </Button>
+                                    <Dialog open={bannerModalOpen} onOpenChange={handleBannerModalChange}>
+                                        <DialogContent className="sm:max-w-md">
+                                            <DialogHeader>
+                                                <DialogTitle>Novo banner</DialogTitle>
+                                                <DialogDescription>Envie a imagem e, se quiser, o link ao qual o banner deve levar ao ser clicado.</DialogDescription>
+                                            </DialogHeader>
+                                            <div className="grid gap-4 py-2">
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor="banner-file-modal">Imagem</Label>
+                                                    <Input
+                                                        id="banner-file-modal"
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={handlePickBannerFile}
+                                                        disabled={uploading}
+                                                    />
+                                                    {pendingBannerFile ? (
+                                                        <p className="text-sm text-muted-foreground">{pendingBannerFile.name}</p>
+                                                    ) : (
+                                                        <p className="text-sm text-muted-foreground">Nenhum arquivo selecionado.</p>
+                                                    )}
+                                                </div>
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor="banner-link">Link do banner (opcional)</Label>
+                                                    <Input
+                                                        id="banner-link"
+                                                        type="text"
+                                                        placeholder="https://..."
+                                                        value={newBannerLink}
+                                                        onChange={(e) => setNewBannerLink(e.target.value)}
+                                                        disabled={uploading}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <DialogFooter>
+                                                <Button type="button" variant="outline" onClick={() => handleBannerModalChange(false)} disabled={uploading}>
+                                                    Cancelar
+                                                </Button>
+                                                <Button type="button" onClick={handleSubmitBanner} disabled={uploading}>
+                                                    {uploading ? (
+                                                        <>
+                                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando...
+                                                        </>
+                                                    ) : (
+                                                        "Salvar banner"
+                                                    )}
+                                                </Button>
+                                            </DialogFooter>
+                                        </DialogContent>
+                                    </Dialog>
                                 </div>
                             </CardHeader>
                             <CardContent>
@@ -279,9 +358,12 @@ const Admin = () => {
                                                         <Trash2 className="mr-1 h-4 w-4" /> Remover
                                                     </Button>
                                                 </div>
-                                                {b.title && (
-                                                    <div className="absolute bottom-0 left-0 right-0 bg-black/40 px-3 py-1 text-xs text-white">
-                                                        {b.title}
+                                                {(b.link || b.title) && (
+                                                    <div
+                                                        className="absolute bottom-0 left-0 right-0 truncate bg-black/50 px-3 py-1 text-xs text-white"
+                                                        title={b.link ?? b.title ?? undefined}
+                                                    >
+                                                        {b.link ? `Link: ${b.link}` : b.title}
                                                     </div>
                                                 )}
                                             </div>

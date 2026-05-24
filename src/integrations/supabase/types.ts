@@ -45,6 +45,7 @@ export type Database = {
           display_order: number
           id: string
           image_url: string
+          link: string | null
           title: string | null
         }
         Insert: {
@@ -53,6 +54,7 @@ export type Database = {
           display_order?: number
           id?: string
           image_url: string
+          link?: string | null
           title?: string | null
         }
         Update: {
@@ -61,6 +63,7 @@ export type Database = {
           display_order?: number
           id?: string
           image_url?: string
+          link?: string | null
           title?: string | null
         }
         Relationships: []
@@ -286,7 +289,148 @@ export type Database = {
         Update: {
           cancel_at_period_end?: boolean | null
           created_at?: string
-    }
+          id?: string
+          is_active?: boolean | null
+          stripe_customer_id?: string | null
+          stripe_product_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_end?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      companies: {
+        Row: {
+          banner_url: string | null
+          company_name: string
+          created_at: string
+          full_address: string
+          id: string
+          link_pagina: string | null
+          maps_url: string | null
+          published: boolean
+          responsible_name: string
+          segment: string
+          services_provided: string | null
+          updated_at: string | null
+          user_id: string
+          whatsapp: string | null
+        }
+        Insert: {
+          banner_url?: string | null
+          company_name: string
+          created_at?: string
+          full_address: string
+          id?: string
+          link_pagina?: string | null
+          maps_url?: string | null
+          published?: boolean
+          responsible_name: string
+          segment: string
+          services_provided?: string | null
+          updated_at?: string | null
+          user_id: string
+          whatsapp?: string | null
+        }
+        Update: {
+          banner_url?: string | null
+          company_name?: string
+          created_at?: string
+          full_address?: string
+          id?: string
+          link_pagina?: string | null
+          maps_url?: string | null
+          published?: boolean
+          responsible_name?: string
+          segment?: string
+          services_provided?: string | null
+          updated_at?: string | null
+          user_id?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      company_products: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          name: string
+          price: number
+          quantity: number | null
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          price: number
+          quantity?: number | null
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          price?: number
+          quantity?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_products_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_reviews: {
+        Row: {
+          comment: string | null
+          company_id: string
+          created_at: string
+          id: string
+          rating: number
+          reviewer_id: string
+        }
+        Insert: {
+          comment?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          rating: number
+          reviewer_id: string
+        }
+        Update: {
+          comment?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          rating?: number
+          reviewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_reviews_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    },
     Views: {
       [_ in never]: never
     }

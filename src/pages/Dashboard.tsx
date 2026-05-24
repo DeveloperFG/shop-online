@@ -53,9 +53,6 @@ const Dashboard = () => {
   const TERMS_VERSION = "v1.0";
 
 
-
-  console.log("subscription:", subscription);
-
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
@@ -260,8 +257,6 @@ const Dashboard = () => {
       fetchProducts();
 
     } catch (err: any) {
-
-      console.log("FULL ERROR:", err);
 
       toast.error(err.message || "Erro ao salvar produto");
 

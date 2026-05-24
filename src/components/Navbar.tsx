@@ -10,6 +10,16 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Menu, Sun, Moon, MessageCircle, LogOut, Shield } from "lucide-react";
 import { useState } from "react";
 import ConversationsList from "./ConversationsList";
@@ -27,10 +37,11 @@ const Navbar = () => {
   const [messagesOpen, setMessagesOpen] = useState(false);
 
   const [rankingOpen, setRankingOpen] = useState(false);
+  const [catalogLoginModalOpen, setCatalogLoginModalOpen] = useState(false);
 
   const links = [
-    { to: "/catalog", label: "Catálogo" },
-    { to: "/pricing", label: "Planos" },
+    { to: "/catalog", label: "Catálogo", requiresAuth: true as const },
+    // { to: "/pricing", label: "Planos" },
     ...(user ? [{ to: "/empresas", label: "Empresas" }] : []),
     // { to: "/empresas", label: "Estabelecimentos" },
     ...(user ? [{ to: "/dashboard", label: "Dashboard" }] : []),
@@ -49,12 +60,23 @@ const Navbar = () => {
 
         {/* Desktop */}
         <div className="hidden items-center gap-4 md:flex">
-          {links.map((l) => (
-            <Link key={l.to} to={l.to} className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-              {l.label}
-            </Link>
-          ))}
-          <button
+          {links.map((l) =>
+            l.requiresAuth && !user ? (
+              <button
+                key={l.to}
+                type="button"
+                onClick={() => setCatalogLoginModalOpen(true)}
+                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {l.label}
+              </button>
+            ) : (
+              <Link key={l.to} to={l.to} className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+                {l.label}
+              </Link>
+            ),
+          )}
+          {/* <button
             onClick={() => {
               setRankingOpen(true);
               setOpen(false);
@@ -62,7 +84,7 @@ const Navbar = () => {
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             Ranking
-          </button>
+          </button> */}
           <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-9 w-9">
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
@@ -92,11 +114,25 @@ const Navbar = () => {
           </SheetTrigger>
           <SheetContent side="right" className="w-64">
             <div className="mt-8 flex flex-col gap-4">
-              {links.map((l) => (
-                <Link key={l.to} to={l.to} onClick={() => setOpen(false)} className="text-lg font-medium text-foreground">
-                  {l.label}
-                </Link>
-              ))}
+              {links.map((l) =>
+                l.requiresAuth && !user ? (
+                  <button
+                    key={l.to}
+                    type="button"
+                    onClick={() => {
+                      setCatalogLoginModalOpen(true);
+                      setOpen(false);
+                    }}
+                    className="w-full text-left text-lg font-medium text-foreground"
+                  >
+                    {l.label}
+                  </button>
+                ) : (
+                  <Link key={l.to} to={l.to} onClick={() => setOpen(false)} className="text-lg font-medium text-foreground">
+                    {l.label}
+                  </Link>
+                ),
+              )}
               {user && (
                 <Link
                   to="/profile"
@@ -107,7 +143,7 @@ const Navbar = () => {
                 </Link>
               )}
 
-              <button
+              {/* <button
                 onClick={() => {
                   setRankingOpen(true);
                   setOpen(false);
@@ -115,7 +151,7 @@ const Navbar = () => {
                 className="flex items-center gap-2 text-lg font-medium text-foreground text-left"
               >
                 Ranking
-              </button>
+              </button> */}
 
               {user && subscription.plan_tier === "enterprise" && (
                 <Link
@@ -123,7 +159,7 @@ const Navbar = () => {
                   onClick={() => setOpen(false)}
                   className="flex items-center gap-2 text-lg font-medium text-foreground"
                 >
-                  Minha Empresa
+                  Minhas empresas
                 </Link>
               )}
 
@@ -169,6 +205,23 @@ const Navbar = () => {
             onClose={() => setRankingOpen(false)}
           />
         )}
+
+        <AlertDialog open={catalogLoginModalOpen} onOpenChange={setCatalogLoginModalOpen}>
+          <AlertDialogContent className="max-w-sm">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Login necessário</AlertDialogTitle>
+              <AlertDialogDescription>
+                Faça login para ver o catálogo completo.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Fechar</AlertDialogCancel>
+              <AlertDialogAction asChild>
+                <Link to="/auth">Entrar</Link>
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </nav>
   );

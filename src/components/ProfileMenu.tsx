@@ -79,7 +79,7 @@ const ProfileMenu = () => {
                     <DropdownMenuItem asChild>
                         <Link to="/minha-empresa" className="cursor-pointer">
                             <Building2 className="h-4 w-4 mr-2" />
-                            Minha Empresa
+                            Minhas empresas
                         </Link>
                     </DropdownMenuItem>
                 )}

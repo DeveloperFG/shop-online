@@ -29,7 +29,6 @@ import ChatDialog from "@/components/ChatDialog";
 type Product = Tables<"products">;
 type Profile = Tables<"profiles">;
 
-const WHATSAPP_DEFAULT_MESSAGE = "Olá, estou interessado no item à venda.";
 
 function buildWhatsAppUrl(phone: string, message: string): string {
   let digits = phone.replace(/\D/g, "");
@@ -48,6 +47,11 @@ const ProductDetail = () => {
   const [seller, setSeller] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
+
+
+  const WHATSAPP_DEFAULT_MESSAGE = `Olá, estou interessado no item à venda: ${product?.name}`;
+
+
 
   useEffect(() => {
     if (authLoading) return;

@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { FaWhatsapp } from 'react-icons/fa';
-import { Loader2, MapPin, Star, Building2, MessageCircle, Link2, Check } from "lucide-react";
+import { Loader2, MapPin, Star, Building2, MessageCircle, Link2, Check, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import {
     Dialog,
@@ -25,6 +25,8 @@ interface Company {
     segment: string;
     full_address: string;
     maps_url: string | null;
+    link_pagina: string | null;
+    services_provided: string | null;
     whatsapp: string | null;
 }
 
@@ -178,6 +180,18 @@ const CompanyDetail = () => {
         )}`
         : null;
 
+    const pageLinkRaw = (company.link_pagina ?? "").trim();
+    const pageLinkHref =
+        pageLinkRaw && !/^javascript:/i.test(pageLinkRaw)
+            ? /^https?:\/\//i.test(pageLinkRaw)
+                ? pageLinkRaw
+                : `https://${pageLinkRaw.replace(/^\/+/, "")}`
+            : null;
+
+    /** Exibe na página pública apenas quando há descrição (valor truthy após trim). */
+    const servicesProvidedText = company.services_provided?.trim() ?? "";
+    const hasServicesProvided = servicesProvidedText.length > 0;
+
     return (
         <div className="min-h-screen bg-background">
             <Navbar />
@@ -233,6 +247,14 @@ const CompanyDetail = () => {
                                             </Button>
                                         </a>
                                     )}
+                                    {pageLinkHref && (
+                                        <a href={pageLinkHref} target="_blank" rel="noopener noreferrer">
+                                            <Button variant="outline" size="sm">
+                                                <ExternalLink className="mr-2 h-4 w-4" />
+                                                Visitar página
+                                            </Button>
+                                        </a>
+                                    )}
                                     {whatsappLink && (
                                         <a href={whatsappLink} target="_blank" rel="noopener noreferrer">
                                             <Button size="sm" className="bg-[hsl(142,70%,45%)] hover:bg-[hsl(142,70%,40%)] text-white">
@@ -244,6 +266,13 @@ const CompanyDetail = () => {
                             </div>
                         </div>
                     </Card>
+
+                    {hasServicesProvided && (
+                        <Card className="p-4 mb-8">
+                            <h2 className="font-serif text-xl font-semibold mb-2">Serviços prestados</h2>
+                            <p className="text-sm text-foreground whitespace-pre-wrap">{servicesProvidedText}</p>
+                        </Card>
+                    )}
 
                     <h2 className="font-serif text-2xl font-semibold mb-4">Produtos</h2>
                     {products.length === 0 ? (
