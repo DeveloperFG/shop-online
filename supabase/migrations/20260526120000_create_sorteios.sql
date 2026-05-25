@@ -6,6 +6,7 @@ CREATE TABLE public.sorteios (
   start_date timestamptz NOT NULL,
   end_date timestamptz NOT NULL,
   image_url text,
+  link_pagina text,
   created_at timestamptz NOT NULL DEFAULT now(),
   created_by uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   CONSTRAINT sorteios_end_after_start CHECK (end_date >= start_date)

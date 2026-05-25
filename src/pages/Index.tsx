@@ -4,14 +4,17 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import ContactSupportModal from "@/components/ContactSupportModal";
-import { ArrowRight, Package, Shield, Star } from "lucide-react";
+import { ArrowRight, Gift, Package, Shield, Star } from "lucide-react";
 
 import BannerCarousel from "@/components/BannerCarousel";
 
 const features = [
   { icon: Package, title: "Gerencie Produtos", desc: "Cadastre e organize seus produtos com facilidade." },
-  { icon: Shield, title: "Seguro & Confiável", desc: "Seus dados protegidos com autenticação robusta." },
+  { icon: Gift, title: "Sorteios", desc: "Participe de sorteios e ganhe prêmios." },
   // { icon: Star, title: "Plano Premium", desc: "Desbloqueie recursos ilimitados." },
+  { icon: Shield, title: "Seguro & Confiável", desc: "Seus dados protegidos com autenticação robusta." },
+
+
 ];
 
 const Index = () => {

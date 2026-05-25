@@ -2,6 +2,7 @@ export interface Sorteio {
   id: string;
   name: string;
   sponsor_name: string;
+  link_pagina: string | null;
   validity_period: string;
   start_date: string;
   end_date: string;
@@ -21,6 +22,14 @@ export function isSorteioEncerrado(sorteio: Pick<Sorteio, "created_at" | "end_da
   if (now > endDate) return true;
 
   return false;
+}
+
+/** Normaliza URL para armazenamento (adiciona https:// se necessário). Retorna null se vazio. */
+export function normalizeSorteioLink(url: string): string | null {
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
 }
 
 export function partitionSorteios(sorteios: Sorteio[]) {

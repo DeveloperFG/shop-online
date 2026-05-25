@@ -22,7 +22,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Shield, Ban, Upload, Trash2, Loader2, Gift, Pencil } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-import { isSorteioEncerrado, type Sorteio } from "@/lib/sorteios";
+import { isSorteioEncerrado, normalizeSorteioLink, type Sorteio } from "@/lib/sorteios";
 
 interface Profile {
     user_id: string;
@@ -70,6 +70,7 @@ const Admin = () => {
     const [sorteioForm, setSorteioForm] = useState({
         name: "",
         sponsor_name: "",
+        link_pagina: "",
         validity_period: "",
         start_date: "",
         end_date: "",
@@ -79,6 +80,7 @@ const Admin = () => {
     const [editSorteioForm, setEditSorteioForm] = useState({
         name: "",
         sponsor_name: "",
+        link_pagina: "",
         validity_period: "",
         start_date: "",
         end_date: "",
@@ -208,6 +210,7 @@ const Admin = () => {
         setSorteioForm({
             name: "",
             sponsor_name: "",
+            link_pagina: "",
             validity_period: "",
             start_date: "",
             end_date: "",
@@ -251,7 +254,7 @@ const Admin = () => {
 
     const handleCreateSorteio = async (e: React.FormEvent) => {
         e.preventDefault();
-        const { name, sponsor_name, validity_period, start_date, end_date } = sorteioForm;
+        const { name, sponsor_name, link_pagina, validity_period, start_date, end_date } = sorteioForm;
         if (!name.trim() || !sponsor_name.trim() || !validity_period.trim() || !start_date || !end_date) {
             toast({ title: "Preencha todos os campos do sorteio", variant: "destructive" });
             return;
@@ -273,6 +276,7 @@ const Admin = () => {
         const { error } = await supabase.from("sorteios").insert({
             name: name.trim(),
             sponsor_name: sponsor_name.trim(),
+            link_pagina: normalizeSorteioLink(link_pagina),
             validity_period: validity_period.trim(),
             start_date: new Date(start_date).toISOString(),
             end_date: new Date(end_date).toISOString(),
@@ -317,6 +321,7 @@ const Admin = () => {
         setEditSorteioForm({
             name: "",
             sponsor_name: "",
+            link_pagina: "",
             validity_period: "",
             start_date: "",
             end_date: "",
@@ -334,6 +339,7 @@ const Admin = () => {
         setEditSorteioForm({
             name: sorteio.name,
             sponsor_name: sorteio.sponsor_name,
+            link_pagina: sorteio.link_pagina ?? "",
             validity_period: sorteio.validity_period,
             start_date: toDatetimeLocalValue(sorteio.start_date),
             end_date: toDatetimeLocalValue(sorteio.end_date),
@@ -360,7 +366,7 @@ const Admin = () => {
         e.preventDefault();
         if (!editingSorteio) return;
 
-        const { name, sponsor_name, validity_period, start_date, end_date } = editSorteioForm;
+        const { name, sponsor_name, link_pagina, validity_period, start_date, end_date } = editSorteioForm;
         if (!name.trim() || !sponsor_name.trim() || !validity_period.trim() || !start_date || !end_date) {
             toast({ title: "Preencha todos os campos do sorteio", variant: "destructive" });
             return;
@@ -394,6 +400,7 @@ const Admin = () => {
             .update({
                 name: name.trim(),
                 sponsor_name: sponsor_name.trim(),
+                link_pagina: normalizeSorteioLink(link_pagina),
                 validity_period: validity_period.trim(),
                 start_date: new Date(start_date).toISOString(),
                 end_date: new Date(end_date).toISOString(),
@@ -661,10 +668,24 @@ const Admin = () => {
                                             />
                                         </div>
                                         <div className="grid gap-2">
-                                            <Label htmlFor="sorteio-validity">Período de vigência</Label>
+                                            <Label htmlFor="sorteio-link">Link da página do patrocinador (opcional)</Label>
+                                            <Input
+                                                id="sorteio-link"
+                                                type="url"
+                                                placeholder="https://..."
+                                                value={sorteioForm.link_pagina}
+                                                onChange={(e) => setSorteioForm((f) => ({ ...f, link_pagina: e.target.value }))}
+                                                disabled={savingSorteio}
+                                            />
+                                            <p className="text-sm text-muted-foreground">
+                                                Ao clicar no nome do patrocinador na página de sorteios, o usuário será direcionado para este link.
+                                            </p>
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="sorteio-validity">Observações</Label>
                                             <Textarea
                                                 id="sorteio-validity"
-                                                placeholder="Ex.: De 01/06/2026 a 30/06/2026"
+                                                placeholder="Ex.: O melhor da city, etc.."
                                                 value={sorteioForm.validity_period}
                                                 onChange={(e) => setSorteioForm((f) => ({ ...f, validity_period: e.target.value }))}
                                                 disabled={savingSorteio}
@@ -734,45 +755,45 @@ const Admin = () => {
                                                         />
                                                     )}
                                                     <div className="p-4">
-                                                    <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
-                                                        <div>
-                                                            <p className="font-semibold text-foreground">{s.name}</p>
-                                                            <p className="text-sm text-muted-foreground">Patrocinador: {s.sponsor_name}</p>
+                                                        <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
+                                                            <div>
+                                                                <p className="font-semibold text-foreground">{s.name}</p>
+                                                                <p className="text-sm text-muted-foreground">Patrocinador: {s.sponsor_name}</p>
+                                                            </div>
+                                                            <Badge variant={isSorteioEncerrado(s) ? "secondary" : "default"}>
+                                                                {isSorteioEncerrado(s) ? "Encerrado" : "Em andamento"}
+                                                            </Badge>
                                                         </div>
-                                                        <Badge variant={isSorteioEncerrado(s) ? "secondary" : "default"}>
-                                                            {isSorteioEncerrado(s) ? "Encerrado" : "Em andamento"}
-                                                        </Badge>
-                                                    </div>
-                                                    <div className="space-y-1 text-sm text-muted-foreground">
-                                                        <p>Vigência: {s.validity_period}</p>
-                                                        <p>Início: {formatSorteioDateTime(s.start_date)}</p>
-                                                        <p>Término: {formatSorteioDateTime(s.end_date)}</p>
-                                                        <p>Cadastrado em: {formatSorteioDateTime(s.created_at)}</p>
-                                                    </div>
-                                                    <div className="mt-3 flex justify-end gap-2">
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            disabled={deletingSorteioId === s.id || savingSorteio}
-                                                            onClick={() => handleOpenEditSorteio(s)}
-                                                        >
-                                                            <Pencil className="mr-1 h-4 w-4" /> Editar
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="destructive"
-                                                            disabled={deletingSorteioId === s.id || savingSorteio}
-                                                            onClick={() => handleDeleteSorteio(s)}
-                                                        >
-                                                            {deletingSorteioId === s.id ? (
-                                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                                            ) : (
-                                                                <>
-                                                                    <Trash2 className="mr-1 h-4 w-4" /> Remover
-                                                                </>
-                                                            )}
-                                                        </Button>
-                                                    </div>
+                                                        <div className="space-y-1 text-sm text-muted-foreground">
+                                                            <p>Observações: {s.validity_period}</p>
+                                                            <p>Início: {formatSorteioDateTime(s.start_date)}</p>
+                                                            <p>Término: {formatSorteioDateTime(s.end_date)}</p>
+                                                            <p>Cadastrado em: {formatSorteioDateTime(s.created_at)}</p>
+                                                        </div>
+                                                        <div className="mt-3 flex justify-end gap-2">
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                disabled={deletingSorteioId === s.id || savingSorteio}
+                                                                onClick={() => handleOpenEditSorteio(s)}
+                                                            >
+                                                                <Pencil className="mr-1 h-4 w-4" /> Editar
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="destructive"
+                                                                disabled={deletingSorteioId === s.id || savingSorteio}
+                                                                onClick={() => handleDeleteSorteio(s)}
+                                                            >
+                                                                {deletingSorteioId === s.id ? (
+                                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                                ) : (
+                                                                    <>
+                                                                        <Trash2 className="mr-1 h-4 w-4" /> Remover
+                                                                    </>
+                                                                )}
+                                                            </Button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             ))}
@@ -792,87 +813,98 @@ const Admin = () => {
                                 </DialogHeader>
                                 <form onSubmit={handleUpdateSorteio} className="flex min-h-0 flex-1 flex-col">
                                     <div className="grid flex-1 gap-4 overflow-y-auto px-6 py-2">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="edit-sorteio-name">Nome do sorteio</Label>
-                                        <Input
-                                            id="edit-sorteio-name"
-                                            value={editSorteioForm.name}
-                                            onChange={(e) => setEditSorteioForm((f) => ({ ...f, name: e.target.value }))}
-                                            disabled={savingSorteio}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="edit-sorteio-image">Imagem do sorteio</Label>
-                                        {editingSorteio?.image_url && !pendingSorteioEditImage && (
-                                            <img
-                                                src={editingSorteio.image_url}
-                                                alt={editingSorteio.name}
-                                                className="max-h-28 w-full rounded-md border border-border object-cover"
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="edit-sorteio-name">Nome do sorteio</Label>
+                                            <Input
+                                                id="edit-sorteio-name"
+                                                value={editSorteioForm.name}
+                                                onChange={(e) => setEditSorteioForm((f) => ({ ...f, name: e.target.value }))}
+                                                disabled={savingSorteio}
+                                                required
                                             />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="edit-sorteio-image">Imagem do sorteio</Label>
+                                            {editingSorteio?.image_url && !pendingSorteioEditImage && (
+                                                <img
+                                                    src={editingSorteio.image_url}
+                                                    alt={editingSorteio.name}
+                                                    className="max-h-28 w-full rounded-md border border-border object-cover"
+                                                />
+                                            )}
+                                            <Input
+                                                id="edit-sorteio-image"
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handlePickSorteioEditImage}
+                                                disabled={savingSorteio}
+                                            />
+                                            <p className="text-sm text-muted-foreground">
+                                                {pendingSorteioEditImage
+                                                    ? `Nova imagem: ${pendingSorteioEditImage.name}`
+                                                    : "Deixe em branco para manter a imagem atual."}
+                                            </p>
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="edit-sorteio-sponsor">Nome do patrocinador</Label>
+                                            <Input
+                                                id="edit-sorteio-sponsor"
+                                                value={editSorteioForm.sponsor_name}
+                                                onChange={(e) => setEditSorteioForm((f) => ({ ...f, sponsor_name: e.target.value }))}
+                                                disabled={savingSorteio}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="edit-sorteio-link">Link da página do patrocinador (opcional)</Label>
+                                            <Input
+                                                id="edit-sorteio-link"
+                                                type="url"
+                                                placeholder="https://..."
+                                                value={editSorteioForm.link_pagina}
+                                                onChange={(e) => setEditSorteioForm((f) => ({ ...f, link_pagina: e.target.value }))}
+                                                disabled={savingSorteio}
+                                            />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="edit-sorteio-validity">Observações</Label>
+                                            <Textarea
+                                                id="edit-sorteio-validity"
+                                                value={editSorteioForm.validity_period}
+                                                onChange={(e) => setEditSorteioForm((f) => ({ ...f, validity_period: e.target.value }))}
+                                                disabled={savingSorteio}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="grid gap-2 sm:grid-cols-2">
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="edit-sorteio-start">Data de início</Label>
+                                                <Input
+                                                    id="edit-sorteio-start"
+                                                    type="datetime-local"
+                                                    value={editSorteioForm.start_date}
+                                                    onChange={(e) => setEditSorteioForm((f) => ({ ...f, start_date: e.target.value }))}
+                                                    disabled={savingSorteio}
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="edit-sorteio-end">Data de final</Label>
+                                                <Input
+                                                    id="edit-sorteio-end"
+                                                    type="datetime-local"
+                                                    value={editSorteioForm.end_date}
+                                                    onChange={(e) => setEditSorteioForm((f) => ({ ...f, end_date: e.target.value }))}
+                                                    disabled={savingSorteio}
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+                                        {editingSorteio && (
+                                            <p className="text-sm text-muted-foreground">
+                                                Cadastrado em: {formatSorteioDateTime(editingSorteio.created_at)}
+                                            </p>
                                         )}
-                                        <Input
-                                            id="edit-sorteio-image"
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handlePickSorteioEditImage}
-                                            disabled={savingSorteio}
-                                        />
-                                        <p className="text-sm text-muted-foreground">
-                                            {pendingSorteioEditImage
-                                                ? `Nova imagem: ${pendingSorteioEditImage.name}`
-                                                : "Deixe em branco para manter a imagem atual."}
-                                        </p>
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="edit-sorteio-sponsor">Nome do patrocinador</Label>
-                                        <Input
-                                            id="edit-sorteio-sponsor"
-                                            value={editSorteioForm.sponsor_name}
-                                            onChange={(e) => setEditSorteioForm((f) => ({ ...f, sponsor_name: e.target.value }))}
-                                            disabled={savingSorteio}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="edit-sorteio-validity">Período de vigência</Label>
-                                        <Textarea
-                                            id="edit-sorteio-validity"
-                                            value={editSorteioForm.validity_period}
-                                            onChange={(e) => setEditSorteioForm((f) => ({ ...f, validity_period: e.target.value }))}
-                                            disabled={savingSorteio}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="grid gap-2 sm:grid-cols-2">
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="edit-sorteio-start">Data de início</Label>
-                                            <Input
-                                                id="edit-sorteio-start"
-                                                type="datetime-local"
-                                                value={editSorteioForm.start_date}
-                                                onChange={(e) => setEditSorteioForm((f) => ({ ...f, start_date: e.target.value }))}
-                                                disabled={savingSorteio}
-                                                required
-                                            />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="edit-sorteio-end">Data de final</Label>
-                                            <Input
-                                                id="edit-sorteio-end"
-                                                type="datetime-local"
-                                                value={editSorteioForm.end_date}
-                                                onChange={(e) => setEditSorteioForm((f) => ({ ...f, end_date: e.target.value }))}
-                                                disabled={savingSorteio}
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-                                    {editingSorteio && (
-                                        <p className="text-sm text-muted-foreground">
-                                            Cadastrado em: {formatSorteioDateTime(editingSorteio.created_at)}
-                                        </p>
-                                    )}
                                     </div>
                                     <DialogFooter className="shrink-0 gap-2 border-t bg-background px-6 py-4">
                                         <Button

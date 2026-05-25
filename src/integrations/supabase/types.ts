@@ -230,6 +230,7 @@ export type Database = {
           end_date: string
           id: string
           image_url: string | null
+          link_pagina: string | null
           name: string
           sponsor_name: string
           start_date: string
@@ -241,6 +242,7 @@ export type Database = {
           end_date: string
           id?: string
           image_url?: string | null
+          link_pagina?: string | null
           name: string
           sponsor_name: string
           start_date: string
@@ -252,6 +254,7 @@ export type Database = {
           end_date?: string
           id?: string
           image_url?: string | null
+          link_pagina?: string | null
           name?: string
           sponsor_name?: string
           start_date?: string
