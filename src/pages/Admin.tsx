@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -20,7 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Ban, Upload, Trash2, Loader2, Gift, Pencil } from "lucide-react";
+import { Shield, Ban, Upload, Trash2, Loader2, Gift, Pencil, Search } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { isSorteioEncerrado, normalizeSorteioLink, type Sorteio } from "@/lib/sorteios";
 import { runSorteioDraw } from "@/lib/runSorteio";
@@ -29,6 +30,7 @@ interface Profile {
     user_id: string;
     name: string;
     email: string;
+    phone: string | null;
     avatar_url: string | null;
     created_at: string;
 }
@@ -49,6 +51,31 @@ interface Banner {
     link: string | null;
 }
 
+const SORTEIO_FORM_STORAGE_KEY = "admin:sorteio-form-draft";
+
+const emptySorteioForm = {
+    name: "",
+    sponsor_name: "",
+    link_pagina: "",
+    validity_period: "",
+    start_date: "",
+    end_date: "",
+};
+
+type SorteioFormState = typeof emptySorteioForm;
+
+const loadSorteioFormDraft = (): SorteioFormState => {
+    if (typeof window === "undefined") return { ...emptySorteioForm };
+    try {
+        const raw = window.localStorage.getItem(SORTEIO_FORM_STORAGE_KEY);
+        if (!raw) return { ...emptySorteioForm };
+        const parsed = JSON.parse(raw) as Partial<SorteioFormState>;
+        return { ...emptySorteioForm, ...parsed };
+    } catch {
+        return { ...emptySorteioForm };
+    }
+};
+
 const Admin = () => {
     const { user, loading: authLoading } = useAuth();
     const { isAdmin, loading: adminLoading } = useAdmin();
@@ -56,6 +83,7 @@ const Admin = () => {
     const { toast } = useToast();
 
     const [profiles, setProfiles] = useState<Profile[]>([]);
+    const [userSearch, setUserSearch] = useState("");
     const [bannedUsers, setBannedUsers] = useState<BannedUser[]>([]);
     const [banners, setBanners] = useState<Banner[]>([]);
     const [loadingData, setLoadingData] = useState(true);
@@ -68,14 +96,7 @@ const Admin = () => {
     const [savingSorteio, setSavingSorteio] = useState(false);
     const [pendingSorteioImage, setPendingSorteioImage] = useState<File | null>(null);
     const [deletingSorteioId, setDeletingSorteioId] = useState<string | null>(null);
-    const [sorteioForm, setSorteioForm] = useState({
-        name: "",
-        sponsor_name: "",
-        link_pagina: "",
-        validity_period: "",
-        start_date: "",
-        end_date: "",
-    });
+    const [sorteioForm, setSorteioForm] = useState<SorteioFormState>(loadSorteioFormDraft);
     const [sorteioEditModalOpen, setSorteioEditModalOpen] = useState(false);
     const [editingSorteio, setEditingSorteio] = useState<Sorteio | null>(null);
     const [editSorteioForm, setEditSorteioForm] = useState({
@@ -85,6 +106,7 @@ const Admin = () => {
         validity_period: "",
         start_date: "",
         end_date: "",
+        created_at: "",
     });
     const [pendingSorteioEditImage, setPendingSorteioEditImage] = useState<File | null>(null);
     const [drawingSorteio, setDrawingSorteio] = useState(false);
@@ -103,10 +125,19 @@ const Admin = () => {
         }
     }, [isAdmin]);
 
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        try {
+            window.localStorage.setItem(SORTEIO_FORM_STORAGE_KEY, JSON.stringify(sorteioForm));
+        } catch {
+            // Ignora erros de persistência (ex.: armazenamento cheio ou indisponível).
+        }
+    }, [sorteioForm]);
+
     const fetchData = async () => {
         setLoadingData(true);
         const [profilesRes, bannedRes, bannersRes, sorteiosRes] = await Promise.all([
-            supabase.from("profiles").select("user_id, name, email, avatar_url, created_at").order("created_at", { ascending: false }),
+            supabase.from("profiles").select("user_id, name, email, phone, avatar_url, created_at").order("created_at", { ascending: false }),
             supabase.from("banned_users").select("*"),
             supabase.from("banners").select("*").order("display_order"),
             supabase.from("sorteios").select("*").order("created_at", { ascending: false }),
@@ -209,15 +240,15 @@ const Admin = () => {
     };
 
     const resetSorteioForm = () => {
-        setSorteioForm({
-            name: "",
-            sponsor_name: "",
-            link_pagina: "",
-            validity_period: "",
-            start_date: "",
-            end_date: "",
-        });
+        setSorteioForm({ ...emptySorteioForm });
         setPendingSorteioImage(null);
+        if (typeof window !== "undefined") {
+            try {
+                window.localStorage.removeItem(SORTEIO_FORM_STORAGE_KEY);
+            } catch {
+                // Ignora erros ao limpar o rascunho.
+            }
+        }
     };
 
     const handlePickSorteioImage = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -327,6 +358,7 @@ const Admin = () => {
             validity_period: "",
             start_date: "",
             end_date: "",
+            created_at: "",
         });
         setPendingSorteioEditImage(null);
     };
@@ -345,6 +377,7 @@ const Admin = () => {
             validity_period: sorteio.validity_period,
             start_date: toDatetimeLocalValue(sorteio.start_date),
             end_date: toDatetimeLocalValue(sorteio.end_date),
+            created_at: toDatetimeLocalValue(sorteio.created_at),
         });
         setPendingSorteioEditImage(null);
         setSorteioEditModalOpen(true);
@@ -368,8 +401,8 @@ const Admin = () => {
         e.preventDefault();
         if (!editingSorteio) return;
 
-        const { name, sponsor_name, link_pagina, validity_period, start_date, end_date } = editSorteioForm;
-        if (!name.trim() || !sponsor_name.trim() || !validity_period.trim() || !start_date || !end_date) {
+        const { name, sponsor_name, link_pagina, validity_period, start_date, end_date, created_at } = editSorteioForm;
+        if (!name.trim() || !sponsor_name.trim() || !validity_period.trim() || !start_date || !end_date || !created_at) {
             toast({ title: "Preencha todos os campos do sorteio", variant: "destructive" });
             return;
         }
@@ -406,6 +439,7 @@ const Admin = () => {
                 validity_period: validity_period.trim(),
                 start_date: new Date(start_date).toISOString(),
                 end_date: new Date(end_date).toISOString(),
+                created_at: new Date(created_at).toISOString(),
                 image_url: imageUrl,
             })
             .eq("id", editingSorteio.id);
@@ -478,6 +512,34 @@ const Admin = () => {
 
     if (!isAdmin) return null;
 
+    const normalizedSearch = userSearch.trim().toLowerCase();
+    const filteredProfiles = normalizedSearch
+        ? profiles.filter((p) =>
+              p.user_id.toLowerCase().includes(normalizedSearch) ||
+              (p.name ?? "").toLowerCase().includes(normalizedSearch) ||
+              (p.email ?? "").toLowerCase().includes(normalizedSearch)
+          )
+        : profiles;
+
+    const handleCopyField = async (value: string | null, label: string) => {
+        const text = (value ?? "").trim();
+        if (!text) {
+            toast({ title: `${label} vazio`, description: "Nada para copiar." });
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(text);
+            toast({ title: `${label} copiado!`, description: text });
+        } catch {
+            toast({ title: "Não foi possível copiar", variant: "destructive" });
+        }
+    };
+
+    const getInitials = (name: string) =>
+        name
+            ? name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+            : "U";
+
     return (
         <div className="min-h-screen bg-background">
             <Navbar />
@@ -497,7 +559,17 @@ const Admin = () => {
                     <TabsContent value="users">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Usuários Cadastrados ({profiles.length})</CardTitle>
+                                <CardTitle>Usuários Cadastrados ({filteredProfiles.length})</CardTitle>
+                                <div className="relative mt-4 max-w-md">
+                                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        type="text"
+                                        placeholder="Buscar por ID, nome ou e-mail..."
+                                        value={userSearch}
+                                        onChange={(e) => setUserSearch(e.target.value)}
+                                        className="pl-9"
+                                    />
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 {loadingData ? (
@@ -508,7 +580,10 @@ const Admin = () => {
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
+                                                <TableHead>ID</TableHead>
+                                                <TableHead>Foto</TableHead>
                                                 <TableHead>Nome</TableHead>
+                                                <TableHead>Contato</TableHead>
                                                 <TableHead>E-mail</TableHead>
                                                 <TableHead>Cadastro</TableHead>
                                                 <TableHead>Status</TableHead>
@@ -516,10 +591,51 @@ const Admin = () => {
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {profiles.map((p) => (
+                                            {filteredProfiles.length === 0 ? (
+                                                <TableRow>
+                                                    <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+                                                        Nenhum usuário encontrado.
+                                                    </TableCell>
+                                                </TableRow>
+                                            ) : (
+                                            filteredProfiles.map((p) => (
                                                 <TableRow key={p.user_id}>
-                                                    <TableCell className="font-medium">{p.name}</TableCell>
-                                                    <TableCell>{p.email}</TableCell>
+                                                    <TableCell
+                                                        className="cursor-pointer font-mono text-xs text-muted-foreground transition-colors hover:text-primary"
+                                                        title="Clique para copiar o ID"
+                                                        onClick={() => handleCopyField(p.user_id, "ID")}
+                                                    >
+                                                        {p.user_id}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Avatar className="h-9 w-9">
+                                                            {p.avatar_url ? <AvatarImage src={p.avatar_url} alt={p.name} /> : null}
+                                                            <AvatarFallback className="bg-primary/10 text-xs text-primary">
+                                                                {getInitials(p.name)}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                    </TableCell>
+                                                    <TableCell
+                                                        className="cursor-pointer font-medium transition-colors hover:text-primary"
+                                                        title="Clique para copiar o nome"
+                                                        onClick={() => handleCopyField(p.name, "Nome")}
+                                                    >
+                                                        {p.name}
+                                                    </TableCell>
+                                                    <TableCell
+                                                        className="cursor-pointer transition-colors hover:text-primary"
+                                                        title="Clique para copiar o contato"
+                                                        onClick={() => handleCopyField(p.phone, "Contato")}
+                                                    >
+                                                        {p.phone || "—"}
+                                                    </TableCell>
+                                                    <TableCell
+                                                        className="cursor-pointer transition-colors hover:text-primary"
+                                                        title="Clique para copiar o e-mail"
+                                                        onClick={() => handleCopyField(p.email, "E-mail")}
+                                                    >
+                                                        {p.email}
+                                                    </TableCell>
                                                     <TableCell>{new Date(p.created_at).toLocaleDateString("pt-BR")}</TableCell>
                                                     <TableCell>
                                                         {isBanned(p.user_id) ? (
@@ -552,7 +668,8 @@ const Admin = () => {
                                                         )}
                                                     </TableCell>
                                                 </TableRow>
-                                            ))}
+                                            ))
+                                            )}
                                         </TableBody>
                                     </Table>
                                 )}
@@ -946,11 +1063,20 @@ const Admin = () => {
                                                 />
                                             </div>
                                         </div>
-                                        {editingSorteio && (
-                                            <p className="text-sm text-muted-foreground">
-                                                Cadastrado em: {formatSorteioDateTime(editingSorteio.created_at)}
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="edit-sorteio-created">Data de cadastro</Label>
+                                            <Input
+                                                id="edit-sorteio-created"
+                                                type="datetime-local"
+                                                value={editSorteioForm.created_at}
+                                                onChange={(e) => setEditSorteioForm((f) => ({ ...f, created_at: e.target.value }))}
+                                                disabled={savingSorteio}
+                                                required
+                                            />
+                                            <p className="text-xs text-muted-foreground">
+                                                Altere para prorrogar a participação do sorteio.
                                             </p>
-                                        )}
+                                        </div>
                                     </div>
                                     <DialogFooter className="shrink-0 gap-2 border-t bg-background px-6 py-4">
                                         <Button

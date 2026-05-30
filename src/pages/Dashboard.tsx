@@ -415,7 +415,7 @@ const Dashboard = () => {
                 <Button variant="ghost" size="icon" onClick={refreshSubscription} disabled={checkingSubscription}>
                   <RefreshCw className={`h-4 w-4 ${checkingSubscription ? "animate-spin" : ""}`} />
                 </Button>
-                {subscription.subscribed ? (
+                {/* {subscription.subscribed ? (
                   <Button variant="outline" size="sm" onClick={handlePortal} disabled={portalLoading}>
                     <CreditCard className="h-4 w-4 mr-1" />
                     {portalLoading ? "Abrindo..." : "Gerenciar"}
@@ -426,7 +426,7 @@ const Dashboard = () => {
                       <Crown className="h-4 w-4 mr-1" /> Upgrade
                     </Link>
                   </Button>
-                )}
+                )} */}
               </div>
             </div>
           </CardHeader>

@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
-import { Loader2, Camera, Save } from "lucide-react";
+import { Loader2, Camera, Save, Copy, Check } from "lucide-react";
 
 type ProfileRow = {
     user_id: string;
@@ -35,6 +35,19 @@ const Profile = () => {
     const [phone, setPhone] = useState("");
     const [location, setLocation] = useState("");
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+    const [copiedId, setCopiedId] = useState(false);
+
+    const handleCopyId = async () => {
+        if (!user) return;
+        try {
+            await navigator.clipboard.writeText(user.id);
+            setCopiedId(true);
+            toast.success("ID copiado!");
+            setTimeout(() => setCopiedId(false), 2000);
+        } catch {
+            toast.error("Não foi possível copiar o ID.");
+        }
+    };
 
     const fetchProfile = useCallback(async () => {
         if (!user) return;
@@ -206,6 +219,21 @@ const Profile = () => {
                                 <CardTitle className="text-lg">Informações Pessoais</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label>Meu ID</Label>
+                                    <div className="flex gap-2">
+                                        <Input value={user.id} readOnly className="opacity-60 font-mono text-sm" />
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={handleCopyId}
+                                            title="Copiar ID"
+                                        >
+                                            {copiedId ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                        </Button>
+                                    </div>
+                                </div>
                                 <div className="space-y-2">
                                     <Label>Nome *</Label>
                                     <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome" />

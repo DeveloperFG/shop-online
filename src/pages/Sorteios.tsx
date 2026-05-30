@@ -252,6 +252,9 @@ const Sorteios = () => {
                 <li>
                   Estar seguindo o perfil aquiShopping no Instagram.
                 </li>
+                <li>
+                  Estar com sua foto de perfil ativa.
+                </li>
               </ol>
 
               <DialogHeader>
@@ -260,10 +263,13 @@ const Sorteios = () => {
               <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
                 <li>Apenas 1 ganhador por sorteio.</li>
                 <li>
-                  Da aba Sorteio em andamento, e sorteado apenas 1 item.
+                  A quantidade de itens sorteados e definido pelo administrador, podendo ser 1 ou mais.
                 </li>
                 <li>
-                  A plataforma irá sortear o item e o  ganhador de forma aleatória.
+                  A plataforma sorteia o ganhador de forma aleatória.
+                </li>
+                <li>
+                  Todos os usuários participam do sorteio, mas so recebem o prêmio se estiver atendendo aos critérios de participação.
                 </li>
                 <li>
                   No final da data de termino do sorteio, o ganhador será revelado.

@@ -17,15 +17,17 @@ function monthIndex(date: Date): number {
 }
 
 /**
- * Sorteio só é considerado encerrado quando NÃO está mais dentro do mês vigente,
- * ou seja, quando sua data de término pertence a um mês anterior ao mês atual.
- * Enquanto o término cair no mês corrente (ou em meses futuros), permanece em andamento.
+ * Compara a data de criação com a data de término do sorteio.
+ * Se o término cair em um mês diferente e posterior ao da criação
+ * (ex.: criado em janeiro e terminando em fevereiro), o sorteio é
+ * considerado encerrado. Enquanto término e criação estiverem no mesmo
+ * mês, permanece em andamento.
  */
-export function isSorteioEncerrado(sorteio: Pick<Sorteio, "created_at" | "end_date">, now = Date.now()): boolean {
+export function isSorteioEncerrado(sorteio: Pick<Sorteio, "created_at" | "end_date">): boolean {
+  const createdMonth = monthIndex(new Date(sorteio.created_at));
   const endMonth = monthIndex(new Date(sorteio.end_date));
-  const currentMonth = monthIndex(new Date(now));
 
-  return endMonth < currentMonth;
+  return endMonth > createdMonth;
 }
 
 /** Normaliza URL para armazenamento (adiciona https:// se necessário). Retorna null se vazio. */
