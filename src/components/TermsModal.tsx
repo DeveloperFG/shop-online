@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const TERMS_VERSION = "v1.0";
+export const TERMS_VERSION = "v1.0";
 
 const TermsModal = ({ user, onAccept }: any) => {
     const [checked, setChecked] = useState(false);

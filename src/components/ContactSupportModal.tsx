@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 /** Destinatário fixo do suporte */
-export const SUPPORT_EMAIL = "kali.fsolutions@gmail.com";
+export const SUPPORT_EMAIL = "A nossa equipe de suporte";
 
 const contactFormSchema = z.object({
   name: z.string().min(2, "Informe seu nome (mínimo 2 caracteres)."),

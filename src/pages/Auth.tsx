@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { LogIn, UserPlus, Mail, Lock, User } from "lucide-react";
+import { LogIn, UserPlus, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -19,6 +19,8 @@ const Auth = () => {
   const [signupPassword, setSignupPassword] = useState("");
   const [forgotEmail, setForgotEmail] = useState("");
   const [showForgot, setShowForgot] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +48,7 @@ const Auth = () => {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: signupEmail,
         password: signupPassword,
         options: {
@@ -55,7 +57,19 @@ const Auth = () => {
         },
       });
       if (error) throw error;
+
+      // Quando o e-mail já está cadastrado, o Supabase retorna um usuário
+      // com a lista de identities vazia (por segurança, não retorna erro).
+      if (data.user && data.user.identities && data.user.identities.length === 0) {
+        toast.error("Este e-mail já está cadastrado na plataforma.");
+        return;
+      }
+
       toast.success("Conta criada! Verifique seu e-mail para confirmar.");
+      toast.info("Confira sua caixa de entrada ou a pasta de spam.");
+      setSignupName("");
+      setSignupEmail("");
+      setSignupPassword("");
     } catch (err: any) {
       toast.error(err.message || "Erro ao criar conta");
     } finally {
@@ -160,13 +174,21 @@ const Auth = () => {
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="login-password"
-                      type="password"
+                      type={showLoginPassword ? "text" : "password"}
                       placeholder="••••••••"
-                      className="pl-9"
+                      className="pl-9 pr-9"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       required
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowLoginPassword((v) => !v)}
+                      className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                      aria-label={showLoginPassword ? "Ocultar senha" : "Mostrar senha"}
+                    >
+                      {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                 </div>
               </CardContent>
@@ -220,14 +242,22 @@ const Auth = () => {
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="signup-password"
-                      type="password"
+                      type={showSignupPassword ? "text" : "password"}
                       placeholder="Mínimo 6 caracteres"
-                      className="pl-9"
+                      className="pl-9 pr-9"
                       value={signupPassword}
                       onChange={(e) => setSignupPassword(e.target.value)}
                       required
                       minLength={6}
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowSignupPassword((v) => !v)}
+                      className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                      aria-label={showSignupPassword ? "Ocultar senha" : "Mostrar senha"}
+                    >
+                      {showSignupPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                 </div>
               </CardContent>

@@ -121,7 +121,14 @@ const Index = () => {
         {/* Footer */}
         <footer className="border-t border-border px-4 py-8">
           <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 text-sm text-muted-foreground sm:flex-row">
-            <span>© {new Date().getFullYear()} FSolutions - Todos os direitos reservados.</span>
+            <a
+              href="https://fsolutions.online/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors hover:text-foreground"
+            >
+              © {new Date().getFullYear()} FSolutions - Todos os direitos reservados.
+            </a>
             {/* <div className="flex gap-6">
             <Link to="/pricing" className="hover:text-foreground">Preços</Link>
             <Link to="/auth" className="hover:text-foreground">Login</Link>

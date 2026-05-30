@@ -11,7 +11,6 @@ import { Search, Package, Clock, MapPin, Star, Loader2, Filter, X } from "lucide
 import { Button } from "@/components/ui/button";
 import { PRODUCT_CATEGORIES } from "@/constants/categories";
 import type { Tables } from "@/integrations/supabase/types";
-import TermsModal from "@/components/TermsModal";
 
 
 type Product = Tables<"products">;
@@ -25,13 +24,8 @@ const Catalog = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [cityFilter, setCityFilter] = useState("");
   const [sellerFilter, setSellerFilter] = useState("");
-
-  const [showTerms, setShowTerms] = useState(false);
-  const [usuario, setUsuario] = useState<unknown>(null);
-
-  const TERMS_VERSION = "v1.0";
-
 
   useEffect(() => {
     if (authLoading) return;
@@ -66,34 +60,6 @@ const Catalog = () => {
     fetchProducts();
   }, [navigate, user, authLoading]);
 
-  useEffect(() => {
-    const loadUser = async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const currentUser = userData.user;
-      setUsuario(currentUser);
-
-      if (!currentUser) return;
-
-      // verifica se já aceitou
-      const { data } = await supabase
-        .from("user_terms_acceptance")
-        .select("*")
-        .eq("user_id", currentUser.id)
-        .eq("terms_version", TERMS_VERSION)
-        .maybeSingle();
-
-      if (!data) {
-        // delay de 2 segundos
-        setTimeout(() => {
-          setShowTerms(true);
-        }, 2000);
-      }
-    };
-
-    loadUser();
-  }, []);
-
-
   const sellerNames = useMemo(() => {
     const names = new Set<string>();
     products.forEach((p) => {
@@ -110,6 +76,14 @@ const Catalog = () => {
     return Array.from(cats).sort();
   }, [products]);
 
+  const availableCities = useMemo(() => {
+    const cities = new Set<string>();
+    products.forEach((p) => {
+      if (p.seller?.location) cities.add(p.seller.location);
+    });
+    return Array.from(cities).sort();
+  }, [products]);
+
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
@@ -118,12 +92,13 @@ const Catalog = () => {
         p.name.toLowerCase().includes(search.toLowerCase()) ||
         p.description?.toLowerCase().includes(search.toLowerCase());
       const matchesCategory = !categoryFilter || (p as any).category === categoryFilter;
+      const matchesCity = !cityFilter || p.seller?.location === cityFilter;
       const matchesSeller = !sellerFilter || p.seller?.name === sellerFilter;
-      return matchesSearch && matchesCategory && matchesSeller;
+      return matchesSearch && matchesCategory && matchesCity && matchesSeller;
     });
-  }, [products, search, categoryFilter, sellerFilter]);
+  }, [products, search, categoryFilter, cityFilter, sellerFilter]);
 
-  const hasActiveFilters = categoryFilter || sellerFilter;
+  const hasActiveFilters = categoryFilter || cityFilter || sellerFilter;
 
   if (authLoading) {
     return (
@@ -140,14 +115,6 @@ const Catalog = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-
-      {showTerms && user && (
-        <TermsModal
-          user={user}
-          onAccept={() => setShowTerms(false)}
-        />
-      )}
-
 
       <div className="mx-auto max-w-6xl px-4 pt-24 pb-16">
         <div className="mb-8 text-center">
@@ -180,6 +147,16 @@ const Catalog = () => {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={cityFilter} onValueChange={setCityFilter}>
+              <SelectTrigger className="w-[180px] h-9 text-sm">
+                <SelectValue placeholder="Cidade" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableCities.map((city) => (
+                  <SelectItem key={city} value={city}>{city}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {/* <Select value={sellerFilter} onValueChange={setSellerFilter}>
               <SelectTrigger className="w-[180px] h-9 text-sm">
                 <SelectValue placeholder="Vendedor" />
@@ -194,7 +171,7 @@ const Catalog = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => { setCategoryFilter(""); setSellerFilter(""); }}
+                onClick={() => { setCategoryFilter(""); setCityFilter(""); setSellerFilter(""); }}
                 className="h-9 text-sm"
               >
                 <X className="h-3 w-3 mr-1" /> Limpar

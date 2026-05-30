@@ -9,7 +9,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import TermsModal from "@/components/TermsModal";
 import CompleteProfileModal from "@/components/CompleteProfileModal";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
@@ -37,7 +36,6 @@ const Dashboard = () => {
   const [portalLoading, setPortalLoading] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const [showTerms, setShowTerms] = useState(false);
   const [usuario, setUsuario] = useState<unknown>(null);
   const [showChangesProfile, setShowChangesProfile] = useState(false);
 
@@ -92,11 +90,9 @@ const Dashboard = () => {
         return;
       }
 
-      // ❌ NÃO aceitou → abre modal de termos
+      // ❌ NÃO aceitou → o TermsGate global cuida do modal de termos.
+      //    Aqui só interrompemos para não abrir o modal de perfil por cima.
       if (!termsData) {
-        setTimeout(() => {
-          setShowTerms(true);
-        }, 2000);
         return;
       }
 
@@ -372,12 +368,6 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {showTerms && user && (
-        <TermsModal
-          user={user}
-          onAccept={() => setShowTerms(false)}
-        />
-      )}
       {showChangesProfile && user && (
         <CompleteProfileModal
           onClose={() => setShowChangesProfile(false)}
