@@ -53,6 +53,8 @@ const SponsorBadge = ({ sorteio }: { sorteio: Sorteio }) => {
 
 const Sorteios = () => {
   const [sorteios, setSorteios] = useState<Sorteio[]>([]);
+  const [winnersBySorteio, setWinnersBySorteio] = useState<Record<string, string>>({});
+  const [selectedWinnerName, setSelectedWinnerName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [rulesModalOpen, setRulesModalOpen] = useState(false);
   const [winnerModalOpen, setWinnerModalOpen] = useState(false);
@@ -66,11 +68,19 @@ const Sorteios = () => {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("sorteios")
-      .select("*")
-      .order("created_at", { ascending: false });
-    setSorteios((data as Sorteio[]) ?? []);
+    const [sorteiosRes, ganhadoresRes] = await Promise.all([
+      supabase.from("sorteios").select("*").order("created_at", { ascending: false }),
+      supabase.from("ganhadores").select("name, sorteio_id, created_at").order("created_at", { ascending: false }),
+    ]);
+    setSorteios((sorteiosRes.data as Sorteio[]) ?? []);
+
+    const winners: Record<string, string> = {};
+    for (const g of ganhadoresRes.data ?? []) {
+      if (g.sorteio_id && !winners[g.sorteio_id]) {
+        winners[g.sorteio_id] = g.name;
+      }
+    }
+    setWinnersBySorteio(winners);
     setLoading(false);
   };
 
@@ -91,18 +101,30 @@ const Sorteios = () => {
     }, 900);
   }, []);
 
-  const handleWinnerOpenChange = useCallback(
-    (open: boolean) => {
-      setWinnerModalOpen(open);
-      if (!open) {
+  const handleWinnerOpenChange = useCallback((open: boolean) => {
+    if (!open) {
+      setWinnerModalOpen(false);
+      clearInterval(countdownRef.current!);
+      setWinnerCountdown(null);
+      setShowWinnerName(false);
+      setSelectedWinnerName(null);
+    }
+  }, []);
+
+  const openWinnerModal = useCallback(
+    (sorteio: Sorteio) => {
+      const winner = winnersBySorteio[sorteio.id] ?? null;
+      setSelectedWinnerName(winner);
+      setWinnerModalOpen(true);
+      if (winner) {
+        startWinnerAnimation();
+      } else {
         clearInterval(countdownRef.current!);
         setWinnerCountdown(null);
         setShowWinnerName(false);
-      } else {
-        startWinnerAnimation();
       }
     },
-    [startWinnerAnimation]
+    [winnersBySorteio, startWinnerAnimation]
   );
 
   const SorteioCard = ({ sorteio }: { sorteio: Sorteio }) => (
@@ -141,7 +163,7 @@ const Sorteios = () => {
         </p>
 
         <button
-          onClick={() => handleWinnerOpenChange(true)}
+          onClick={() => openWinnerModal(sorteio)}
           className="text-sm font-medium text-primary underline underline-offset-4 hover:text-primary/80"
         >
           Ver ganhador
@@ -209,14 +231,14 @@ const Sorteios = () => {
             onClick={() => setRulesModalOpen(true)}
             className="mb-8 text-sm font-medium text-primary underline underline-offset-4 hover:text-primary/80"
           >
-            Regras para participar
+            Regras do sorteio
           </button>
 
           {/* Modal de regras */}
           <Dialog open={rulesModalOpen} onOpenChange={setRulesModalOpen}>
             <DialogContent className="max-w-sm">
               <DialogHeader>
-                <DialogTitle>Regras do sorteio</DialogTitle>
+                <DialogTitle>Como participar</DialogTitle>
               </DialogHeader>
               <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
                 <li>Ter uma conta ativa na plataforma.</li>
@@ -229,6 +251,25 @@ const Sorteios = () => {
                 </li>
                 <li>
                   Estar seguindo o perfil aquiShopping no Instagram.
+                </li>
+              </ol>
+
+              <DialogHeader>
+                <DialogTitle>Como acontece o sorteio</DialogTitle>
+              </DialogHeader>
+              <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
+                <li>Apenas 1 ganhador por sorteio.</li>
+                <li>
+                  Da aba Sorteio em andamento, e sorteado apenas 1 item.
+                </li>
+                <li>
+                  A plataforma irá sortear o item e o  ganhador de forma aleatória.
+                </li>
+                <li>
+                  No final da data de termino do sorteio, o ganhador será revelado.
+                </li>
+                <li>
+                  Entraremos em contato via e-mail com o ganhador para receber o prêmio.
                 </li>
               </ol>
             </DialogContent>
@@ -263,8 +304,18 @@ const Sorteios = () => {
                   </div>
                 )}
 
+                {/* Sem ganhador ainda */}
+                {!selectedWinnerName && (
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <span className="text-5xl opacity-40">🎁</span>
+                    <p className="text-sm text-muted-foreground">
+                      O ganhador ainda não foi sorteado. Aguarde a data de término do sorteio.
+                    </p>
+                  </div>
+                )}
+
                 {/* Countdown */}
-                {winnerCountdown !== null && (
+                {selectedWinnerName && winnerCountdown !== null && (
                   <div className="flex flex-col items-center gap-3">
                     <p className="text-sm text-muted-foreground">
                       Revelando o ganhador...
@@ -279,17 +330,17 @@ const Sorteios = () => {
                 )}
 
                 {/* Nome do ganhador */}
-                {showWinnerName && (
+                {selectedWinnerName && showWinnerName && (
                   <div className="winner-slide-up flex flex-col items-center gap-1 text-center">
                     <span className="winner-trophy text-5xl">🏆</span>
                     <p className="mt-2 text-sm text-muted-foreground">
                       Ganhador do sorteio
                     </p>
                     <p className="winner-name-pop text-xl font-medium text-foreground">
-                      John Doe
+                      {selectedWinnerName}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Parabéns! Entre em contato para retirar o prêmio.
+                      Parabéns! Entre em contato para receber o prêmio.
                     </p>
                   </div>
                 )}

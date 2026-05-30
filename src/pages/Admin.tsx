@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Shield, Ban, Upload, Trash2, Loader2, Gift, Pencil } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { isSorteioEncerrado, normalizeSorteioLink, type Sorteio } from "@/lib/sorteios";
+import { runSorteioDraw } from "@/lib/runSorteio";
 
 interface Profile {
     user_id: string;
@@ -86,6 +87,7 @@ const Admin = () => {
         end_date: "",
     });
     const [pendingSorteioEditImage, setPendingSorteioEditImage] = useState<File | null>(null);
+    const [drawingSorteio, setDrawingSorteio] = useState(false);
 
     useEffect(() => {
         if (!authLoading && !adminLoading) {
@@ -424,6 +426,34 @@ const Admin = () => {
         setSavingSorteio(false);
     };
 
+    const handleRunSorteio = async () => {
+        setDrawingSorteio(true);
+        const result = await runSorteioDraw(new Date(), Math.random, { force: true });
+        switch (result.status) {
+            case "ok": {
+                const nomes = result.ganhadores.map((g) => g.name).join(", ");
+                toast({
+                    title: `Sorteio realizado! ${result.ganhadores.length} ganhador(es)`,
+                    description: nomes ? `Ganhador(es): ${nomes}` : undefined,
+                });
+                break;
+            }
+            case "not-last-day":
+                toast({ title: "Fora da data do sorteio", description: "O sorteio automático ocorre no último dia do mês." });
+                break;
+            case "no-participants":
+                toast({ title: "Nenhum participante encontrado", variant: "destructive" });
+                break;
+            case "no-items":
+                toast({ title: "Nenhum item disponível neste mês", description: "Cadastre sorteios com término dentro do mês vigente.", variant: "destructive" });
+                break;
+            case "error":
+                toast({ title: "Erro ao realizar o sorteio", description: result.error, variant: "destructive" });
+                break;
+        }
+        setDrawingSorteio(false);
+    };
+
     const handleDeleteBanner = async (banner: Banner) => {
         const fileName = banner.image_url.split("/").pop();
         if (fileName) {
@@ -733,8 +763,24 @@ const Admin = () => {
                             </Card>
 
                             <Card>
-                                <CardHeader>
+                                <CardHeader className="flex flex-row items-center justify-between gap-2">
                                     <CardTitle>Sorteios cadastrados ({sorteios.length})</CardTitle>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        onClick={handleRunSorteio}
+                                        disabled={drawingSorteio || loadingData}
+                                    >
+                                        {drawingSorteio ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sorteando...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Gift className="mr-2 h-4 w-4" /> Realizar sorteio
+                                            </>
+                                        )}
+                                    </Button>
                                 </CardHeader>
                                 <CardContent>
                                     {loadingData ? (

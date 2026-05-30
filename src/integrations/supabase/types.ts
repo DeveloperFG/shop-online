@@ -223,6 +223,50 @@ export type Database = {
         }
         Relationships: []
       }
+      ganhadores: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          location: string | null
+          name: string
+          phone: string | null
+          sorteio_id: string | null
+          sorteio_name: string
+          sponsor_name: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          location?: string | null
+          name: string
+          phone?: string | null
+          sorteio_id?: string | null
+          sorteio_name: string
+          sponsor_name: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          location?: string | null
+          name?: string
+          phone?: string | null
+          sorteio_id?: string | null
+          sorteio_name?: string
+          sponsor_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ganhadores_sorteio_id_fkey"
+            columns: ["sorteio_id"]
+            isOneToOne: false
+            referencedRelation: "sorteios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sorteios: {
         Row: {
           created_at: string
