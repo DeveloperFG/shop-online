@@ -246,7 +246,7 @@ const Sorteios = () => {
                 </li>
                 <li>
                   Estar seguindo o perfil da empresa responsável pelo sorteio no
-                  Instagram.
+                  Instagram se houver.
                 </li>
                 <li>
                   Estar seguindo o perfil aquishopping no Instagram.
