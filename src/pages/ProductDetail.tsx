@@ -49,7 +49,7 @@ const ProductDetail = () => {
   const [chatOpen, setChatOpen] = useState(false);
 
 
-  const WHATSAPP_DEFAULT_MESSAGE = `Olá, estou interessado no item à venda: ${product?.name}`;
+  const WHATSAPP_DEFAULT_MESSAGE = `Olá, gostaria de saber mais sobre o item: ${product?.name}`;
 
 
 

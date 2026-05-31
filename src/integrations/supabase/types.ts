@@ -276,6 +276,7 @@ export type Database = {
           image_url: string | null
           link_pagina: string | null
           name: string
+          published: boolean
           sponsor_name: string
           start_date: string
           validity_period: string
@@ -288,6 +289,7 @@ export type Database = {
           image_url?: string | null
           link_pagina?: string | null
           name: string
+          published?: boolean
           sponsor_name: string
           start_date: string
           validity_period: string
@@ -300,6 +302,7 @@ export type Database = {
           image_url?: string | null
           link_pagina?: string | null
           name?: string
+          published?: boolean
           sponsor_name?: string
           start_date?: string
           validity_period?: string

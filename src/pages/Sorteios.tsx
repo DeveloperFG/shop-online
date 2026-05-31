@@ -14,9 +14,8 @@ import { Loader2, Gift } from "lucide-react";
 import { partitionSorteios, type Sorteio } from "@/lib/sorteios";
 
 const formatDateTime = (value: string) =>
-  new Date(value).toLocaleString("pt-BR", {
+  new Date(value).toLocaleDateString("pt-BR", {
     dateStyle: "short",
-    timeStyle: "short",
   });
 
 const CONFETTI_COLORS = ["#7F77DD", "#1D9E75", "#D85A30", "#378ADD", "#D4537E", "#EF9F27"];
@@ -69,7 +68,7 @@ const Sorteios = () => {
   const load = async () => {
     setLoading(true);
     const [sorteiosRes, ganhadoresRes] = await Promise.all([
-      supabase.from("sorteios").select("*").order("created_at", { ascending: false }),
+      supabase.from("sorteios").select("*").eq("published", true).order("created_at", { ascending: false }),
       supabase.from("ganhadores").select("name, sorteio_id, created_at").order("created_at", { ascending: false }),
     ]);
     setSorteios((sorteiosRes.data as Sorteio[]) ?? []);
@@ -243,7 +242,7 @@ const Sorteios = () => {
               <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
                 <li>Ter uma conta ativa na plataforma.</li>
                 <li>
-                  Ter no mínimo 1 produto cadastrado à venda na plataforma.
+                  Ter no mínimo 1 item cadastrado no catálogo da plataforma.
                 </li>
                 <li>
                   Estar seguindo o perfil da empresa responsável pelo sorteio no
@@ -253,7 +252,7 @@ const Sorteios = () => {
                   Estar seguindo o perfil aquiShopping no Instagram.
                 </li>
                 <li>
-                  Estar com sua foto de perfil ativa.
+                  Estar com uma foto de perfil.
                 </li>
               </ol>
 
@@ -275,7 +274,7 @@ const Sorteios = () => {
                   No final da data de termino do sorteio, o ganhador será revelado.
                 </li>
                 <li>
-                  Entraremos em contato via e-mail com o ganhador para receber o prêmio.
+                  Entraremos em contato via e-mail com o ganhador para informar como receber o prêmio.
                 </li>
               </ol>
             </DialogContent>
@@ -361,7 +360,7 @@ const Sorteios = () => {
           ) : sorteios.length === 0 ? (
             <div className="py-16 text-center text-muted-foreground">
               <Gift className="mx-auto mb-4 h-12 w-12 opacity-40" />
-              Nenhum sorteio cadastrado no momento.
+              Nenhum sorteio disponível no momento.
             </div>
           ) : (
             <Tabs defaultValue="andamento">

@@ -8,6 +8,8 @@ export const PRODUCT_CATEGORIES = [
   "Brinquedos e Games",
   "Saúde e Beleza",
   "Ferramentas",
+  "Aluguel",
+  "Serviço",
   "Outros",
 ] as const;
 

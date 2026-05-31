@@ -229,7 +229,7 @@ const Dashboard = () => {
 
         if (error) throw error;
 
-        toast.success("Produto atualizado!");
+        toast.success("Item atualizado!");
 
       } else {
 
@@ -244,7 +244,7 @@ const Dashboard = () => {
         if (error) throw error;
 
         toast.success(
-          "Produto cadastrado! Publique-o para aparecer no catálogo."
+          "Item cadastrado! Publique-o para aparecer no catálogo."
         );
       }
 
@@ -269,7 +269,7 @@ const Dashboard = () => {
       toast.error("Erro ao alterar status");
       return;
     }
-    toast.success(newStatus === "active" ? "Produto publicado no catálogo!" : "Produto retirado do catálogo.");
+    toast.success(newStatus === "active" ? "Item publicado no catálogo!" : "Item retirado do catálogo.");
     fetchProducts();
   };
 
@@ -308,7 +308,7 @@ const Dashboard = () => {
 
       if (deleteError) throw deleteError;
 
-      toast.success("Produto removido!");
+      toast.success("Item removido!");
 
       setDeleteId(null);
 
@@ -435,9 +435,9 @@ const Dashboard = () => {
         {/* Products Section */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-foreground">Meus Produtos</h2>
+            <h2 className="text-lg font-semibold text-foreground">Meus Itens</h2>
             <Button onClick={openNew} disabled={!canAddProduct} size="sm">
-              <Plus className="h-4 w-4 mr-1" /> Novo Produto
+              <Plus className="h-4 w-4 mr-1" /> Novo Item
             </Button>
           </div>
 
@@ -522,9 +522,9 @@ const Dashboard = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editing ? "Editar Produto" : "Novo Produto"}</DialogTitle>
+            <DialogTitle>{editing ? "Editar Item" : "Novo Item"}</DialogTitle>
             <DialogDescription>
-              {editing ? "Atualize as informações do produto." : "Preencha os dados. O produto será criado como rascunho — publique-o depois."}
+              {editing ? "Atualize as informações do Item." : "Preencha os dados. O Item será criado como rascunho — publique-o depois."}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">

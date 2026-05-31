@@ -119,7 +119,7 @@ const Catalog = () => {
       <div className="mx-auto max-w-6xl px-4 pt-24 pb-16">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Catálogo</h1>
-          <p className="mt-2 text-muted-foreground">Produtos publicados para venda</p>
+          <p className="mt-2 text-muted-foreground">Itens publicados no catálogo</p>
         </div>
 
         {/* Search & Filters */}

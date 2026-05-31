@@ -7,6 +7,7 @@ export interface Sorteio {
   start_date: string;
   end_date: string;
   image_url: string | null;
+  published: boolean;
   created_at: string;
   created_by: string;
 }

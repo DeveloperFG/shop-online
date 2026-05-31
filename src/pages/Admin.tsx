@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Ban, Upload, Trash2, Loader2, Gift, Pencil, Search } from "lucide-react";
+import { Shield, Ban, Upload, Trash2, Loader2, Gift, Pencil, Search, Eye, EyeOff } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { isSorteioEncerrado, normalizeSorteioLink, type Sorteio } from "@/lib/sorteios";
 import { runSorteioDraw } from "@/lib/runSorteio";
@@ -92,10 +92,14 @@ const Admin = () => {
     const [bannerModalOpen, setBannerModalOpen] = useState(false);
     const [newBannerLink, setNewBannerLink] = useState("");
     const [pendingBannerFile, setPendingBannerFile] = useState<File | null>(null);
+    const [editBanner, setEditBanner] = useState<Banner | null>(null);
+    const [editBannerLink, setEditBannerLink] = useState("");
+    const [savingBannerLink, setSavingBannerLink] = useState(false);
     const [sorteios, setSorteios] = useState<Sorteio[]>([]);
     const [savingSorteio, setSavingSorteio] = useState(false);
     const [pendingSorteioImage, setPendingSorteioImage] = useState<File | null>(null);
     const [deletingSorteioId, setDeletingSorteioId] = useState<string | null>(null);
+    const [togglingPublishId, setTogglingPublishId] = useState<string | null>(null);
     const [sorteioForm, setSorteioForm] = useState<SorteioFormState>(loadSorteioFormDraft);
     const [sorteioEditModalOpen, setSorteioEditModalOpen] = useState(false);
     const [editingSorteio, setEditingSorteio] = useState<Sorteio | null>(null);
@@ -327,6 +331,24 @@ const Admin = () => {
         setSavingSorteio(false);
     };
 
+    const handleToggleSorteioPublished = async (sorteio: Sorteio) => {
+        setTogglingPublishId(sorteio.id);
+        const nextPublished = !sorteio.published;
+        const { error } = await supabase
+            .from("sorteios")
+            .update({ published: nextPublished })
+            .eq("id", sorteio.id);
+        if (error) {
+            toast({ title: "Erro ao atualizar publicação", description: error.message, variant: "destructive" });
+        } else {
+            toast({ title: nextPublished ? "Sorteio publicado" : "Sorteio despublicado" });
+            setSorteios((prev) =>
+                prev.map((s) => (s.id === sorteio.id ? { ...s, published: nextPublished } : s))
+            );
+        }
+        setTogglingPublishId(null);
+    };
+
     const handleDeleteSorteio = async (sorteio: Sorteio) => {
         setDeletingSorteioId(sorteio.id);
         await removeSorteioImageFromStorage(sorteio.image_url);
@@ -498,6 +520,36 @@ const Admin = () => {
             toast({ title: "Erro ao remover banner", variant: "destructive" });
         } else {
             toast({ title: "Banner removido" });
+            fetchData();
+        }
+    };
+
+    const openEditBanner = (banner: Banner) => {
+        setEditBanner(banner);
+        setEditBannerLink(banner.link ?? "");
+    };
+
+    const handleEditBannerChange = (open: boolean) => {
+        if (!open) {
+            setEditBanner(null);
+            setEditBannerLink("");
+        }
+    };
+
+    const handleSaveBannerLink = async () => {
+        if (!editBanner) return;
+        setSavingBannerLink(true);
+        const trimmed = editBannerLink.trim();
+        const { error } = await supabase
+            .from("banners")
+            .update({ link: trimmed || null })
+            .eq("id", editBanner.id);
+        setSavingBannerLink(false);
+        if (error) {
+            toast({ title: "Erro ao atualizar o link", variant: "destructive" });
+        } else {
+            toast({ title: "Link atualizado!" });
+            handleEditBannerChange(false);
             fetchData();
         }
     };
@@ -746,7 +798,10 @@ const Admin = () => {
                                         {banners.map((b) => (
                                             <div key={b.id} className="group relative overflow-hidden rounded-lg border border-border">
                                                 <img src={b.image_url} alt={b.title || "Banner"} className="aspect-[3/1] w-full object-cover" />
-                                                <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                                                <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                                                    <Button size="sm" variant="secondary" onClick={() => openEditBanner(b)}>
+                                                        <Pencil className="mr-1 h-4 w-4" /> Editar link
+                                                    </Button>
                                                     <Button size="sm" variant="destructive" onClick={() => handleDeleteBanner(b)}>
                                                         <Trash2 className="mr-1 h-4 w-4" /> Remover
                                                     </Button>
@@ -765,6 +820,55 @@ const Admin = () => {
                                 )}
                             </CardContent>
                         </Card>
+                        <Dialog open={!!editBanner} onOpenChange={handleEditBannerChange}>
+                            <DialogContent className="sm:max-w-md">
+                                <DialogHeader>
+                                    <DialogTitle>Editar link do banner</DialogTitle>
+                                    <DialogDescription>
+                                        Defina o link de destino. Use uma URL (https://...) para abrir uma página ou um e-mail para abrir o cliente de e-mail.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="grid gap-4 py-2">
+                                    {editBanner && (
+                                        <img
+                                            src={editBanner.image_url}
+                                            alt={editBanner.title || "Banner"}
+                                            className="aspect-[3/1] w-full rounded-md object-cover"
+                                        />
+                                    )}
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="edit-banner-link">Link do banner (opcional)</Label>
+                                        <Input
+                                            id="edit-banner-link"
+                                            type="text"
+                                            placeholder="https://... ou contato@email.com"
+                                            value={editBannerLink}
+                                            onChange={(e) => setEditBannerLink(e.target.value)}
+                                            disabled={savingBannerLink}
+                                        />
+                                    </div>
+                                </div>
+                                <DialogFooter>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => handleEditBannerChange(false)}
+                                        disabled={savingBannerLink}
+                                    >
+                                        Cancelar
+                                    </Button>
+                                    <Button type="button" onClick={handleSaveBannerLink} disabled={savingBannerLink}>
+                                        {savingBannerLink ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando...
+                                            </>
+                                        ) : (
+                                            "Salvar link"
+                                        )}
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
                     </TabsContent>
 
                     <TabsContent value="sorteios">
@@ -923,9 +1027,14 @@ const Admin = () => {
                                                                 <p className="font-semibold text-foreground">{s.name}</p>
                                                                 <p className="text-sm text-muted-foreground">Patrocinador: {s.sponsor_name}</p>
                                                             </div>
-                                                            <Badge variant={isSorteioEncerrado(s) ? "secondary" : "default"}>
-                                                                {isSorteioEncerrado(s) ? "Encerrado" : "Em andamento"}
-                                                            </Badge>
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <Badge variant={s.published ? "default" : "outline"}>
+                                                                    {s.published ? "Publicado" : "Não publicado"}
+                                                                </Badge>
+                                                                <Badge variant={isSorteioEncerrado(s) ? "secondary" : "default"}>
+                                                                    {isSorteioEncerrado(s) ? "Encerrado" : "Em andamento"}
+                                                                </Badge>
+                                                            </div>
                                                         </div>
                                                         <div className="space-y-1 text-sm text-muted-foreground">
                                                             <p>Observações: {s.validity_period}</p>
@@ -933,7 +1042,25 @@ const Admin = () => {
                                                             <p>Término: {formatSorteioDateTime(s.end_date)}</p>
                                                             <p>Cadastrado em: {formatSorteioDateTime(s.created_at)}</p>
                                                         </div>
-                                                        <div className="mt-3 flex justify-end gap-2">
+                                                        <div className="mt-3 flex flex-wrap justify-end gap-2">
+                                                            <Button
+                                                                size="sm"
+                                                                variant={s.published ? "secondary" : "default"}
+                                                                disabled={togglingPublishId === s.id || deletingSorteioId === s.id || savingSorteio}
+                                                                onClick={() => handleToggleSorteioPublished(s)}
+                                                            >
+                                                                {togglingPublishId === s.id ? (
+                                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                                ) : s.published ? (
+                                                                    <>
+                                                                        <EyeOff className="mr-1 h-4 w-4" /> Despublicar
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <Eye className="mr-1 h-4 w-4" /> Publicar
+                                                                    </>
+                                                                )}
+                                                            </Button>
                                                             <Button
                                                                 size="sm"
                                                                 variant="outline"

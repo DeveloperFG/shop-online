@@ -9,11 +9,32 @@ interface Banner {
     link: string | null;
 }
 
-function normalizeBannerHref(link: string | null | undefined): string | null {
+const EMAIL_SUBJECT = "Divulga";
+const EMAIL_BODY = "Quero saber mais como divulgar minha marca";
+
+const EMAIL_REGEX = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
+
+interface BannerLink {
+    href: string;
+    isEmail: boolean;
+}
+
+function normalizeBannerHref(link: string | null | undefined): BannerLink | null {
     const t = link?.trim();
     if (!t) return null;
-    if (/^https?:\/\//i.test(t)) return t;
-    return `https://${t}`;
+
+    // Se for um link http/https, abre a página normalmente.
+    if (/^https?:\/\//i.test(t)) return { href: t, isEmail: false };
+
+    // Se contiver um e-mail (@gmail.com ou afins), redireciona para abertura de e-mail.
+    const emailMatch = t.match(EMAIL_REGEX);
+    if (emailMatch) {
+        const email = emailMatch[0];
+        const href = `mailto:${email}?subject=${encodeURIComponent(EMAIL_SUBJECT)}&body=${encodeURIComponent(EMAIL_BODY)}`;
+        return { href, isEmail: true };
+    }
+
+    return { href: `https://${t}`, isEmail: false };
 }
 
 const BannerCarousel = () => {
@@ -47,7 +68,7 @@ const BannerCarousel = () => {
         <div className="w-full overflow-hidden" ref={emblaRef}>
             <div className="flex">
                 {banners.map((b) => {
-                    const href = normalizeBannerHref(b.link);
+                    const bannerLink = normalizeBannerHref(b.link);
                     const img = (
                         <img
                             src={b.image_url}
@@ -57,11 +78,11 @@ const BannerCarousel = () => {
                     );
                     return (
                         <div key={b.id} className="min-w-0 shrink-0 grow-0 basis-full">
-                            {href ? (
+                            {bannerLink ? (
                                 <a
-                                    href={href}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                    href={bannerLink.href}
+                                    target={bannerLink.isEmail ? undefined : "_blank"}
+                                    rel={bannerLink.isEmail ? undefined : "noopener noreferrer"}
                                     className="block w-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                 >
                                     {img}
