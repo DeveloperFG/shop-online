@@ -42,7 +42,7 @@ const SponsorBadge = ({ sorteio }: { sorteio: Sorteio }) => {
       href={sorteio.link_pagina}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex cursor-pointer underline-offset-2 underline hover:underline"
+      className="inline-flex cursor-pointer underline-offset-2  hover:underline"
       title={`Visitar página de ${sorteio.sponsor_name}`}
     >
       {badge}
