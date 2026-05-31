@@ -68,6 +68,36 @@ export type Database = {
         }
         Relationships: []
       }
+      parceiros: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          image_url: string | null
+          link: string | null
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          link?: string | null
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          link?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           buyer_id: string

@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Ban, Upload, Trash2, Loader2, Gift, Pencil, Search, Eye, EyeOff } from "lucide-react";
+import { Shield, Ban, Upload, Trash2, Loader2, Gift, Pencil, Search, Eye, EyeOff, Handshake, Link2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { isSorteioEncerrado, normalizeSorteioLink, type Sorteio } from "@/lib/sorteios";
 import { runSorteioDraw } from "@/lib/runSorteio";
@@ -50,6 +50,24 @@ interface Banner {
     display_order: number;
     link: string | null;
 }
+
+interface Parceiro {
+    id: string;
+    name: string;
+    description: string | null;
+    link: string | null;
+    image_url: string | null;
+    created_at: string;
+    created_by: string;
+}
+
+const emptyParceiroForm = {
+    name: "",
+    description: "",
+    link: "",
+};
+
+type ParceiroFormState = typeof emptyParceiroForm;
 
 const SORTEIO_FORM_STORAGE_KEY = "admin:sorteio-form-draft";
 
@@ -115,6 +133,16 @@ const Admin = () => {
     const [pendingSorteioEditImage, setPendingSorteioEditImage] = useState<File | null>(null);
     const [drawingSorteio, setDrawingSorteio] = useState(false);
 
+    const [parceiros, setParceiros] = useState<Parceiro[]>([]);
+    const [parceiroForm, setParceiroForm] = useState<ParceiroFormState>({ ...emptyParceiroForm });
+    const [pendingParceiroImage, setPendingParceiroImage] = useState<File | null>(null);
+    const [savingParceiro, setSavingParceiro] = useState(false);
+    const [deletingParceiroId, setDeletingParceiroId] = useState<string | null>(null);
+    const [parceiroEditModalOpen, setParceiroEditModalOpen] = useState(false);
+    const [editingParceiro, setEditingParceiro] = useState<Parceiro | null>(null);
+    const [editParceiroForm, setEditParceiroForm] = useState<ParceiroFormState>({ ...emptyParceiroForm });
+    const [pendingParceiroEditImage, setPendingParceiroEditImage] = useState<File | null>(null);
+
     useEffect(() => {
         if (!authLoading && !adminLoading) {
             if (!user || !isAdmin) {
@@ -140,16 +168,18 @@ const Admin = () => {
 
     const fetchData = async () => {
         setLoadingData(true);
-        const [profilesRes, bannedRes, bannersRes, sorteiosRes] = await Promise.all([
+        const [profilesRes, bannedRes, bannersRes, sorteiosRes, parceirosRes] = await Promise.all([
             supabase.from("profiles").select("user_id, name, email, phone, avatar_url, created_at").order("created_at", { ascending: false }),
             supabase.from("banned_users").select("*"),
             supabase.from("banners").select("*").order("display_order"),
             supabase.from("sorteios").select("*").order("created_at", { ascending: false }),
+            supabase.from("parceiros").select("*").order("created_at", { ascending: false }),
         ]);
         if (profilesRes.data) setProfiles(profilesRes.data);
         if (bannedRes.data) setBannedUsers(bannedRes.data);
         if (bannersRes.data) setBanners(bannersRes.data);
         if (sorteiosRes.data) setSorteios(sorteiosRes.data as Sorteio[]);
+        if (parceirosRes.data) setParceiros(parceirosRes.data as Parceiro[]);
         setLoadingData(false);
     };
 
@@ -510,6 +540,165 @@ const Admin = () => {
         setDrawingSorteio(false);
     };
 
+    const handlePickParceiroImage = (
+        e: React.ChangeEvent<HTMLInputElement>,
+        setter: (file: File | null) => void,
+    ) => {
+        const file = e.target.files?.[0];
+        if (!file) {
+            setter(null);
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            toast({ title: "Imagem muito grande (máx 5MB)", variant: "destructive" });
+            e.target.value = "";
+            return;
+        }
+        setter(file);
+    };
+
+    const uploadParceiroImage = async (file: File): Promise<string | null> => {
+        const ext = file.name.split(".").pop();
+        const path = `${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage.from("parceiros").upload(path, file);
+        if (uploadError) {
+            toast({ title: "Erro no upload da imagem", description: uploadError.message, variant: "destructive" });
+            return null;
+        }
+        const { data: urlData } = supabase.storage.from("parceiros").getPublicUrl(path);
+        return urlData.publicUrl;
+    };
+
+    const removeParceiroImageFromStorage = async (imageUrl: string | null) => {
+        if (!imageUrl) return;
+        const fileName = imageUrl.split("/").pop();
+        if (fileName) {
+            await supabase.storage.from("parceiros").remove([fileName]);
+        }
+    };
+
+    const resetParceiroForm = () => {
+        setParceiroForm({ ...emptyParceiroForm });
+        setPendingParceiroImage(null);
+    };
+
+    const handleCreateParceiro = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const { name, description, link } = parceiroForm;
+        if (!name.trim()) {
+            toast({ title: "Informe o nome do parceiro", variant: "destructive" });
+            return;
+        }
+        if (!pendingParceiroImage) {
+            toast({ title: "Selecione uma imagem para o parceiro", variant: "destructive" });
+            return;
+        }
+        setSavingParceiro(true);
+        const imageUrl = await uploadParceiroImage(pendingParceiroImage);
+        if (!imageUrl) {
+            setSavingParceiro(false);
+            return;
+        }
+        const { error } = await supabase.from("parceiros").insert({
+            name: name.trim(),
+            description: description.trim() || null,
+            link: link.trim() || null,
+            image_url: imageUrl,
+            created_by: user!.id,
+        });
+        if (error) {
+            await removeParceiroImageFromStorage(imageUrl);
+            toast({ title: "Erro ao cadastrar parceiro", description: error.message, variant: "destructive" });
+        } else {
+            toast({ title: "Parceiro cadastrado com sucesso!" });
+            resetParceiroForm();
+            fetchData();
+        }
+        setSavingParceiro(false);
+    };
+
+    const resetParceiroEditModal = () => {
+        setEditingParceiro(null);
+        setEditParceiroForm({ ...emptyParceiroForm });
+        setPendingParceiroEditImage(null);
+    };
+
+    const handleParceiroEditModalChange = (open: boolean) => {
+        setParceiroEditModalOpen(open);
+        if (!open) resetParceiroEditModal();
+    };
+
+    const handleOpenEditParceiro = (parceiro: Parceiro) => {
+        setEditingParceiro(parceiro);
+        setEditParceiroForm({
+            name: parceiro.name,
+            description: parceiro.description ?? "",
+            link: parceiro.link ?? "",
+        });
+        setPendingParceiroEditImage(null);
+        setParceiroEditModalOpen(true);
+    };
+
+    const handleUpdateParceiro = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingParceiro) return;
+        const { name, description, link } = editParceiroForm;
+        if (!name.trim()) {
+            toast({ title: "Informe o nome do parceiro", variant: "destructive" });
+            return;
+        }
+        setSavingParceiro(true);
+        let imageUrl = editingParceiro.image_url;
+        const previousImageUrl = editingParceiro.image_url;
+
+        if (pendingParceiroEditImage) {
+            const uploadedUrl = await uploadParceiroImage(pendingParceiroEditImage);
+            if (!uploadedUrl) {
+                setSavingParceiro(false);
+                return;
+            }
+            imageUrl = uploadedUrl;
+        }
+
+        const { error } = await supabase
+            .from("parceiros")
+            .update({
+                name: name.trim(),
+                description: description.trim() || null,
+                link: link.trim() || null,
+                image_url: imageUrl,
+            })
+            .eq("id", editingParceiro.id);
+
+        if (error) {
+            if (imageUrl !== previousImageUrl) {
+                await removeParceiroImageFromStorage(imageUrl);
+            }
+            toast({ title: "Erro ao atualizar parceiro", description: error.message, variant: "destructive" });
+        } else {
+            if (imageUrl !== previousImageUrl) {
+                await removeParceiroImageFromStorage(previousImageUrl);
+            }
+            toast({ title: "Parceiro atualizado com sucesso!" });
+            handleParceiroEditModalChange(false);
+            fetchData();
+        }
+        setSavingParceiro(false);
+    };
+
+    const handleDeleteParceiro = async (parceiro: Parceiro) => {
+        setDeletingParceiroId(parceiro.id);
+        await removeParceiroImageFromStorage(parceiro.image_url);
+        const { error } = await supabase.from("parceiros").delete().eq("id", parceiro.id);
+        if (error) {
+            toast({ title: "Erro ao remover parceiro", variant: "destructive" });
+        } else {
+            toast({ title: "Parceiro removido" });
+            fetchData();
+        }
+        setDeletingParceiroId(null);
+    };
+
     const handleDeleteBanner = async (banner: Banner) => {
         const fileName = banner.image_url.split("/").pop();
         if (fileName) {
@@ -606,6 +795,7 @@ const Admin = () => {
                         <TabsTrigger value="users">Usuários</TabsTrigger>
                         <TabsTrigger value="banners">Banners</TabsTrigger>
                         <TabsTrigger value="sorteios">Sorteios</TabsTrigger>
+                        <TabsTrigger value="parceiros">Parceiros</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="users">
@@ -1216,6 +1406,232 @@ const Admin = () => {
                                         </Button>
                                         <Button type="submit" disabled={savingSorteio}>
                                             {savingSorteio ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando...
+                                                </>
+                                            ) : (
+                                                "Salvar alterações"
+                                            )}
+                                        </Button>
+                                    </DialogFooter>
+                                </form>
+                            </DialogContent>
+                        </Dialog>
+                    </TabsContent>
+
+                    <TabsContent value="parceiros">
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Handshake className="h-5 w-5 text-primary" />
+                                        Cadastrar parceiro
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <form onSubmit={handleCreateParceiro} className="grid gap-4">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="parceiro-image">Imagem do parceiro</Label>
+                                            <Input
+                                                id="parceiro-image"
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => handlePickParceiroImage(e, setPendingParceiroImage)}
+                                                disabled={savingParceiro}
+                                                required
+                                            />
+                                            {pendingParceiroImage ? (
+                                                <p className="text-sm text-muted-foreground">{pendingParceiroImage.name}</p>
+                                            ) : (
+                                                <p className="text-sm text-muted-foreground">Nenhum arquivo selecionado.</p>
+                                            )}
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="parceiro-name">Nome</Label>
+                                            <Input
+                                                id="parceiro-name"
+                                                value={parceiroForm.name}
+                                                onChange={(e) => setParceiroForm((f) => ({ ...f, name: e.target.value }))}
+                                                disabled={savingParceiro}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="parceiro-link">Link (opcional)</Label>
+                                            <Input
+                                                id="parceiro-link"
+                                                type="url"
+                                                placeholder="https://..."
+                                                value={parceiroForm.link}
+                                                onChange={(e) => setParceiroForm((f) => ({ ...f, link: e.target.value }))}
+                                                disabled={savingParceiro}
+                                            />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="parceiro-description">Descrição (opcional)</Label>
+                                            <Textarea
+                                                id="parceiro-description"
+                                                placeholder="Descreva o parceiro..."
+                                                value={parceiroForm.description}
+                                                onChange={(e) => setParceiroForm((f) => ({ ...f, description: e.target.value }))}
+                                                disabled={savingParceiro}
+                                            />
+                                        </div>
+                                        <Button type="submit" disabled={savingParceiro}>
+                                            {savingParceiro ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando...
+                                                </>
+                                            ) : (
+                                                "Cadastrar parceiro"
+                                            )}
+                                        </Button>
+                                    </form>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Parceiros cadastrados ({parceiros.length})</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    {loadingData ? (
+                                        <div className="flex justify-center py-8">
+                                            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                                        </div>
+                                    ) : parceiros.length === 0 ? (
+                                        <p className="py-8 text-center text-muted-foreground">Nenhum parceiro cadastrado.</p>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            {parceiros.map((p) => (
+                                                <div key={p.id} className="overflow-hidden rounded-lg border border-border">
+                                                    {p.image_url && (
+                                                        <img
+                                                            src={p.image_url}
+                                                            alt={p.name}
+                                                            className="aspect-[16/9] w-full object-cover"
+                                                        />
+                                                    )}
+                                                    <div className="p-4">
+                                                        <p className="font-semibold text-foreground">{p.name}</p>
+                                                        {p.description && (
+                                                            <p className="mt-1 text-sm text-muted-foreground">{p.description}</p>
+                                                        )}
+                                                        {p.link && (
+                                                            <a
+                                                                href={p.link}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="mt-1 inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                                                            >
+                                                                <Link2 className="h-3.5 w-3.5" /> {p.link}
+                                                            </a>
+                                                        )}
+                                                        <div className="mt-3 flex flex-wrap justify-end gap-2">
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                disabled={deletingParceiroId === p.id || savingParceiro}
+                                                                onClick={() => handleOpenEditParceiro(p)}
+                                                            >
+                                                                <Pencil className="mr-1 h-4 w-4" /> Editar
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="destructive"
+                                                                disabled={deletingParceiroId === p.id || savingParceiro}
+                                                                onClick={() => handleDeleteParceiro(p)}
+                                                            >
+                                                                {deletingParceiroId === p.id ? (
+                                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                                ) : (
+                                                                    <>
+                                                                        <Trash2 className="mr-1 h-4 w-4" /> Remover
+                                                                    </>
+                                                                )}
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        <Dialog open={parceiroEditModalOpen} onOpenChange={handleParceiroEditModalChange}>
+                            <DialogContent className="flex max-h-[80vh] w-[calc(100%-2rem)] max-w-md flex-col gap-0 overflow-hidden p-0 sm:max-w-md">
+                                <DialogHeader className="shrink-0 px-6 pt-6 pb-2 pr-12">
+                                    <DialogTitle>Editar parceiro</DialogTitle>
+                                    <DialogDescription>Atualize os dados do parceiro.</DialogDescription>
+                                </DialogHeader>
+                                <form onSubmit={handleUpdateParceiro} className="flex min-h-0 flex-1 flex-col">
+                                    <div className="grid flex-1 gap-4 overflow-y-auto px-6 py-2">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="edit-parceiro-image">Imagem do parceiro</Label>
+                                            {editingParceiro?.image_url && !pendingParceiroEditImage && (
+                                                <img
+                                                    src={editingParceiro.image_url}
+                                                    alt={editingParceiro.name}
+                                                    className="max-h-28 w-full rounded-md border border-border object-cover"
+                                                />
+                                            )}
+                                            <Input
+                                                id="edit-parceiro-image"
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => handlePickParceiroImage(e, setPendingParceiroEditImage)}
+                                                disabled={savingParceiro}
+                                            />
+                                            <p className="text-sm text-muted-foreground">
+                                                {pendingParceiroEditImage
+                                                    ? `Nova imagem: ${pendingParceiroEditImage.name}`
+                                                    : "Deixe em branco para manter a imagem atual."}
+                                            </p>
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="edit-parceiro-name">Nome</Label>
+                                            <Input
+                                                id="edit-parceiro-name"
+                                                value={editParceiroForm.name}
+                                                onChange={(e) => setEditParceiroForm((f) => ({ ...f, name: e.target.value }))}
+                                                disabled={savingParceiro}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="edit-parceiro-link">Link (opcional)</Label>
+                                            <Input
+                                                id="edit-parceiro-link"
+                                                type="url"
+                                                placeholder="https://..."
+                                                value={editParceiroForm.link}
+                                                onChange={(e) => setEditParceiroForm((f) => ({ ...f, link: e.target.value }))}
+                                                disabled={savingParceiro}
+                                            />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="edit-parceiro-description">Descrição (opcional)</Label>
+                                            <Textarea
+                                                id="edit-parceiro-description"
+                                                value={editParceiroForm.description}
+                                                onChange={(e) => setEditParceiroForm((f) => ({ ...f, description: e.target.value }))}
+                                                disabled={savingParceiro}
+                                            />
+                                        </div>
+                                    </div>
+                                    <DialogFooter className="shrink-0 gap-2 border-t bg-background px-6 py-4">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => handleParceiroEditModalChange(false)}
+                                            disabled={savingParceiro}
+                                        >
+                                            Cancelar
+                                        </Button>
+                                        <Button type="submit" disabled={savingParceiro}>
+                                            {savingParceiro ? (
                                                 <>
                                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando...
                                                 </>

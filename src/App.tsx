@@ -21,6 +21,7 @@ import Companies from "./pages/Companies";
 import CompanyDetail from "./pages/CompanyDetail";
 import MyCompany from "./pages/MyCompany";
 import Sorteios from "./pages/Sorteios";
+import Parceiros from "./pages/Parceiros";
 import TermsGate from "@/components/TermsGate";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ const App = () => (
               <Route path="/empresa/:id" element={<CompanyDetail />} />
               <Route path="/minha-empresa" element={<MyCompany />} />
               <Route path="/sorteios" element={<Sorteios />} />
+              <Route path="/parceiros" element={<Parceiros />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
