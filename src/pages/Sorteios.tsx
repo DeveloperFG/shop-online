@@ -42,7 +42,7 @@ const SponsorBadge = ({ sorteio }: { sorteio: Sorteio }) => {
       href={sorteio.link_pagina}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex cursor-pointer underline-offset-2 hover:underline"
+      className="inline-flex cursor-pointer underline-offset-2 underline hover:underline"
       title={`Visitar página de ${sorteio.sponsor_name}`}
     >
       {badge}
@@ -249,7 +249,7 @@ const Sorteios = () => {
                   Instagram.
                 </li>
                 <li>
-                  Estar seguindo o perfil aquiShopping no Instagram.
+                  Estar seguindo o perfil aquishopping no Instagram.
                 </li>
                 <li>
                   Estar com uma foto de perfil.
