@@ -9,7 +9,7 @@ import { ArrowRight, Gift, Package, Shield, Star } from "lucide-react";
 import BannerCarousel from "@/components/BannerCarousel";
 
 const features = [
-  { icon: Package, title: "Gerencie Produtos", desc: "Cadastre e organize seus produtos com facilidade." },
+  { icon: Package, title: "Gerencie Itens e Serviços", desc: "Cadastre e organize seus itens e serviços com facilidade." },
   { icon: Gift, title: "Sorteios", desc: "Participe de sorteios e ganhe prêmios." },
   // { icon: Star, title: "Plano Premium", desc: "Desbloqueie recursos ilimitados." },
   { icon: Shield, title: "Seguro & Confiável", desc: "Seus dados protegidos com autenticação robusta." },
@@ -41,16 +41,16 @@ const Index = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/10" />
           <div className="relative z-10 mx-auto max-w-3xl text-center">
             <span className="mb-4 inline-block rounded-full border border-border bg-muted px-4 py-1.5 text-xs font-medium text-muted-foreground">
-              ✨ Anuncie seus produtos novos e usados
+              ✨ Anuncie seus serviços, produtos novos e usados
             </span>
             <h1 className="mt-4 text-4xl font-extrabold leading-tight tracking-tight text-foreground sm:text-5xl md:text-6xl">
-              Gerencie seus produtos de forma{" "}
+              Gerencie seus itens de forma{" "}
               <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 simples e eficiente
               </span>
             </h1>
             <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">
-              Cadastre, organize e compartilhe seus produtos com praticidade.
+              Cadastre, organize e compartilhe com praticidade.
             </p>
             <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <Button asChild size="lg" className="w-full sm:w-auto">
@@ -72,7 +72,7 @@ const Index = () => {
               Tudo que você precisa
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-center text-muted-foreground">
-              Ferramenta completa para gerenciar e vender seus produtos.
+              Ferramenta completa para gerenciar e vender seus itens e serviços.
             </p>
             <div className="mt-12 grid gap-8 sm:grid-cols-3">
               {features.map((f) => (
@@ -92,7 +92,7 @@ const Index = () => {
         <section className="px-4 py-20">
           <div className="mx-auto max-w-2xl rounded-2xl border border-border bg-card p-8 text-center shadow-sm sm:p-12">
             <h2 className="text-2xl font-bold text-card-foreground sm:text-3xl">Pronto para começar?</h2>
-            <p className="mt-3 text-muted-foreground">Crie sua conta gratuitamente e comece a gerenciar seus produtos agora.</p>
+            <p className="mt-3 text-muted-foreground">Crie sua conta gratuitamente e comece a gerenciar seus itens e serviços agora.</p>
             <Button asChild size="lg" className="mt-6">
               <Link to={user ? "/dashboard" : "/auth"}>
                 {user ? "Acessar Dashboard" : "Criar Conta Grátis"} <ArrowRight className="ml-2 h-4 w-4" />
